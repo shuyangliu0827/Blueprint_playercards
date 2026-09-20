@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "activeVersion": "v0.1.0",
+  "versions": [
+    {
+      "configVersion": "v0.1.0",
+      "file": "rarity_v0.json",
+      "sha256": "269303b5dd4656370c0f4b2981aa3fd0d9bbffc53d01f5ddad9945d0d7773fd6"
+    }
+  ]
+}

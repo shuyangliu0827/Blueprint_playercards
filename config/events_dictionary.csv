@@ -1,0 +1,19 @@
+event_name,category,trust,required_fields,optional_fields,description,active_metric
+valid_input_submitted,input,client,eventId|actorAnonId|occurredAt,pollution,Qualified input accepted,completion_denominator
+input_rejected,input,client,eventId|actorAnonId|occurredAt,rejectionCode|pollution,Rejected input reported separately,descriptive
+generation_requested,generation,client,eventId|actorAnonId|occurredAt|generationId|reason,tier|configVersion|pollution,Generation request with explicit reason,repeat_generation
+card_generated,generation,client,eventId|actorAnonId|occurredAt|generationId,latencyMs|qaOutcome|tier|configVersion|pollution,Successfully delivered card,successful_recipients
+generation_qa_completed,quality,client,eventId|actorAnonId|occurredAt|generationId|qaOutcome,hardVetoCategory|pollution,Structured QA result,a1_quality
+generation_retry,operations,client,eventId|actorAnonId|occurredAt|generationId,tier|configVersion|pollution,Stage-3 hook for an actual retry attempt; excluded from repeat generation,excluded_from_metrics
+generation_failed,operations,client,eventId|actorAnonId|occurredAt|generationId,tier|configVersion|pollution,Stage-3 hook for terminal generation failure,excluded_from_metrics
+generation_refunded,operations,client,eventId|actorAnonId|occurredAt|generationId,tier|configVersion|pollution,Terminal failure returned one free attempt; no payment refund or account ledger in v0,excluded_from_metrics
+generation_restored,operations,client,eventId|actorAnonId|occurredAt|generationId,tier|configVersion|pollution,Original task restored with the same draw; not a purchased entitlement,excluded_from_metrics
+auto_collected,collection,client,eventId|actorAnonId|occurredAt|generationId,pollution,Automatic collection is not a save,descriptive
+comparison_requested,sharing,client,eventId|actorAnonId|occurredAt|generationId,assetType|tier|configVersion|pollution,Explicit original-versus-card comparison request,descriptive
+share_asset_generated,sharing,client,eventId|actorAnonId|occurredAt|generationId,assetType|tier|configVersion|pollution,保存上界：已生成但未必已保存；保存为辅助上界,save_upper_bound
+share_asset_download_triggered,sharing,client,eventId|actorAnonId|occurredAt|generationId,assetType|tier|configVersion|pollution,Non-WeChat download initiated; no success claim,descriptive
+share_longpress_hint_shown,sharing,client,eventId|actorAnonId|occurredAt|generationId,assetType|tier|configVersion|pollution,WeChat long-press prompt shown,descriptive
+share_intent,sharing,client,eventId|actorAnonId|occurredAt|generationId|channel,assetType|tier|configVersion|pollution,Share action intent; panel open is not completed share,descriptive
+shared_link_opened,referral,server_validated,eventId|actorAnonId|occurredAt|visitorAnonId|referralCreatorAnonId|refId,pollution,回流为主指标；服务端观察并验证分享回流,referral
+ip_pollution_window_flagged,operations,server_validated,eventId|actorAnonId|occurredAt|windowSeconds|distinctVisitorCount,pollution,IP 污染主信号；仅记录窗口和去重数量且不记录原始 IP 或 IP 哈希,excluded_from_metrics
+ip_pollution_after_exhaustion,operations,server_validated,eventId|actorAnonId|occurredAt|windowSeconds|distinctVisitorCount,pollution,次数耗尽后的 IP 污染辅助信号；仅记录窗口和去重数量且不记录原始 IP 或 IP 哈希,excluded_from_metrics

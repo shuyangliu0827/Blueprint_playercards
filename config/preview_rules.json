@@ -1,0 +1,17 @@
+{
+  "version": "v0",
+  "freeSuccessfulCards": 3,
+  "anonymousIdentity": {
+    "issuer": "server",
+    "copies": ["cookie", "localStorage"],
+    "resetByClearingAccepted": true
+  },
+  "ipPollution": {
+    "rollingWindowMs": 3600000,
+    "distinctAnonIdsThreshold": 5,
+    "afterExhaustionWindowMs": 600000,
+    "action": "record-only",
+    "affectsMetricCohorts": false,
+    "ipStorage": "salted-hash-aggregation-only"
+  }
+}

@@ -1,0 +1,11 @@
+export const rarityFixture = {
+  schemaVersion: '1.0.0', configVersion: 'v0.1.0', mode: 'internal-preview',
+  tiers: [
+    { id: 'base', label: '基础', weight: 40 },
+    { id: 'silver', label: '银折', weight: 26 },
+    { id: 'prism', label: '棱镜', weight: 18 },
+    { id: 'gold', label: '金箔', weight: 11 },
+    { id: 'obsidian', label: '黑曜', weight: 5 }
+  ],
+  firstDraw: { policy: 'first-successful-issuance', exclude: ['base'], normalization: 'relative-weight' }
+};

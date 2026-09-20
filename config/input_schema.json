@@ -1,0 +1,20 @@
+{
+  "version": "v0",
+  "allowedPhotoMimeTypes": ["image/jpeg", "image/png", "image/heic"],
+  "maxPhotoBytes": 10000000,
+  "shortEdgeWarningPixels": 1024,
+  "nickname": {
+    "hanMinCharacters": 1,
+    "hanMaxCharacters": 6,
+    "latinMinCharacters": 1,
+    "latinMaxCharacters": 14
+  },
+  "jerseyNumberPattern": "^[0-9]{1,2}$",
+  "positions": ["PG", "SG", "SF", "PF", "C"],
+  "handedness": ["LEFT", "RIGHT"],
+  "requiredDeclarations": [
+    "faceProcessingConsent",
+    "photoRightsConfirmed",
+    "adultSelfDeclaration"
+  ]
+}

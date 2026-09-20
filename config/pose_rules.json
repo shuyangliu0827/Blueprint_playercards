@@ -1,0 +1,16 @@
+{
+  "version": "v0",
+  "canonicalArtHandedness": "RIGHT",
+  "uncertainAngleFallback": "F",
+  "routes": [
+    { "positionGroup": "G", "angle": "F", "poseId": "G-F" },
+    { "positionGroup": "G", "angle": "L", "poseId": "G-L" },
+    { "positionGroup": "G", "angle": "R", "poseId": "G-R" },
+    { "positionGroup": "F", "angle": "F", "poseId": "F-F" },
+    { "positionGroup": "F", "angle": "L", "poseId": "F-L" },
+    { "positionGroup": "F", "angle": "R", "poseId": "F-R" },
+    { "positionGroup": "C", "angle": "F", "poseId": "C-F" },
+    { "positionGroup": "C", "angle": "L", "poseId": "C-L" },
+    { "positionGroup": "C", "angle": "R", "poseId": "C-R" }
+  ]
+}

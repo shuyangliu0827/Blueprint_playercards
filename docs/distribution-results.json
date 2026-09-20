@@ -1,0 +1,28 @@
+{
+  "purpose": "Deterministic implementation test only; not user research or personal odds guarantee",
+  "configVersion": "v0.1.0",
+  "results": [
+    {
+      "pool": "regular",
+      "draws": 100000,
+      "counts": {
+        "base": 39868,
+        "silver": 25998,
+        "prism": 18125,
+        "gold": 10976,
+        "obsidian": 5033
+      }
+    },
+    {
+      "pool": "first-guaranteed",
+      "draws": 100000,
+      "counts": {
+        "base": 0,
+        "silver": 43191,
+        "prism": 30040,
+        "gold": 18449,
+        "obsidian": 8320
+      }
+    }
+  ]
+}

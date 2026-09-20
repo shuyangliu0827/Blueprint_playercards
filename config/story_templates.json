@@ -1,0 +1,28 @@
+{
+  "version": "v0",
+  "maxUnicodeCharacters": 80,
+  "positionLabels": {
+    "PG": "控球后卫",
+    "SG": "得分后卫",
+    "SF": "小前锋",
+    "PF": "大前锋",
+    "C": "中锋"
+  },
+  "templates": [
+    {
+      "id": "court-reading",
+      "sentences": [
+        "{nickname}身披{jerseyNumber}号，以{positionLabel}视角阅读球场。",
+        "每次移动都变成下一次选择的起点。",
+        "这张卡记录此刻，为下一回合留下空间。"
+      ]
+    },
+    {
+      "id": "personal-moment",
+      "sentences": [
+        "{nickname}以{jerseyNumber}号和{positionLabel}身份走进这一刻。",
+        "卡面保存的是个人球场记忆，也是继续上场的邀请。"
+      ]
+    }
+  ]
+}

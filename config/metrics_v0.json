@@ -1,0 +1,37 @@
+{
+  "version": "v0",
+  "gates": {
+    "a1": {
+      "firstPass": { "passAtOrAbove": 0.70, "fixAtOrAbove": 0.55, "stopBelow": 0.55 },
+      "retryDelivery": { "passAtOrAbove": 0.85 },
+      "hardVeto": { "maximum": 0.05, "categoryMaximum": 0.03 },
+      "textAndLabels": { "passAtOrAbove": 1 },
+      "latencyMs": { "p50Maximum": 15000, "p95Maximum": 45000 }
+    },
+    "a2": {
+      "completion": { "passAtOrAbove": 0.80 },
+      "saveUpperBound": {
+        "status": "active_upper_bound",
+        "numerator": "distinct actors with share_asset_generated",
+        "denominator": "distinct successful card recipients",
+        "passAtOrAbove": 0.50,
+        "stopBelow": 0.30
+      },
+      "legacyActiveSave": {
+        "status": "superseded_inactive",
+        "passAtOrAbove": 0.50,
+        "stopBelow": 0.30,
+        "reason": "No reliable download-success signal; replaced by an explicitly labelled upper bound."
+      },
+      "legacyActiveShare": {
+        "status": "superseded_inactive",
+        "passAtOrAbove": 0.25,
+        "improveBelow": 0.15,
+        "reason": "User replaced this metric; share intent remains descriptive and has no new threshold."
+      },
+      "referral": { "passAtOrAbove": 0.50, "rethinkBelow": 0.20 },
+      "repeatGeneration": { "passAtOrAbove": 0.40, "oneOffBelow": 0.20 }
+    }
+  },
+  "sample": { "unprovenBelow": 150, "target": 300 }
+}
