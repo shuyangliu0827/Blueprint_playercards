@@ -73,7 +73,7 @@ export default function Debug() {
       <p>
         四种分享物按 200 × 200 像素中心裁切。这里使用示例图，不读取任何人的私人卡片。
         <br />
-        海报中卡片占比 60.2%；下方可比较五种材质，并检查静态降级。
+        海报中卡片占比 60.5%；下方可比较五种材质，并检查静态降级。
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="debug-gallery">

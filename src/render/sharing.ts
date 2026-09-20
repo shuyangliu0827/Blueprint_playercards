@@ -1,6 +1,8 @@
 import QRCode from 'qrcode';
 import { makeCanvas, drawFittedImage } from './layout';
 import { canvasPng } from './png-metadata';
+export const POSTER_CARD_RECT = { x: 130, y: 25, w: 820, h: 1148 } as const;
+
 export type AssetType = 'card' | 'poster' | 'thumbnail' | 'comparison';
 export async function composeShare(
   type: AssetType,
@@ -23,8 +25,9 @@ export async function composeShare(
     c.fillStyle = '#e3e6ed';
     c.textBaseline = 'top';
     if (type === 'poster') {
-      // 790×1106 = 60.2% of the poster. Exact 5:7, centered.
-      c.drawImage(card, 145, 35, 790, 1106);
+      // Exact 5:7 and horizontally centered; 60.53% of the poster area.
+      const r = POSTER_CARD_RECT;
+      c.drawImage(card, r.x, r.y, r.w, r.h);
       c.font = '700 38px Arial,"PingFang SC",sans-serif';
       c.fillText(`${nickname}的篮球卡`, 70, 1190);
       c.font = '25px Arial,"PingFang SC",sans-serif';
