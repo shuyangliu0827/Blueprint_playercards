@@ -1,0 +1,51 @@
+{
+  "testedAt": "2026-09-20T22:21:04.801Z",
+  "base": "http://localhost:3000",
+  "passed": true,
+  "networkRequests": 32,
+  "external": [],
+  "errors": [],
+  "metrics": {
+    "validInputSubmitters": 1,
+    "successfulRecipients": 1,
+    "completionRate": 1,
+    "saveUpperBoundPeople": 1,
+    "saveUpperBoundRate": 1,
+    "repeatGenerationPeople": 1,
+    "repeatGenerationRate": 1,
+    "attributedReferralVisitors": 1,
+    "referralRate": 1,
+    "referralAttribution": {
+      "50247ab4-d1ea-4bb2-82ad-f2c2a6c1e447": 1
+    }
+  },
+  "events": [
+    "ip_pollution_window_flagged",
+    "valid_input_submitted",
+    "generation_requested",
+    "generation_retry",
+    "card_generated",
+    "auto_collected",
+    "share_intent",
+    "share_asset_generated",
+    "share_asset_download_triggered",
+    "share_intent",
+    "share_asset_generated",
+    "share_asset_download_triggered",
+    "comparison_requested",
+    "share_asset_generated",
+    "share_asset_download_triggered",
+    "share_intent",
+    "share_asset_generated",
+    "share_asset_download_triggered",
+    "valid_input_submitted",
+    "generation_requested",
+    "generation_retry",
+    "generation_failed",
+    "generation_refunded",
+    "generation_restored",
+    "card_generated",
+    "auto_collected",
+    "shared_link_opened"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": "v0",
+  "transport": "memory-only-polling",
+  "generatorInterface": {
+    "method": "generate",
+    "arguments": [
+      "input",
+      "templateVersion",
+      "poseId",
+      "mirror",
+      "drawResult"
+    ],
+    "returns": "Promise<Artwork> (canvas, dimensions, kind, debug) or structured error",
+    "asyncTransport": "submit-poll-complete",
+    "qaHook": "manual-review",
+    "input": "Browser-only PreparedPhoto plus explicitly selected DetectedFace; never serialized to server"
+  },
+  "normalLatencyQuantilesMs": {
+    "p50": 12000,
+    "p95": 40000
+  },
+  "fastLatencyMs": 500,
+  "outcomes": {
+    "success": 0.85,
+    "retryThenSuccess": 0.1,
+    "retryThenFailure": 0.05
+  },
+  "maximumAttempts": 2,
+  "successfulCardLimit": 3,
+  "reservationTimeoutMs": 1800000,
+  "jobRetentionMs": 86400000,
+  "eventRetentionMs": 86400000,
+  "maximumJobs": 2000,
+  "maximumEvents": 10000,
+  "maximumIdentities": 8000,
+  "maximumCompletions": 24000
+}

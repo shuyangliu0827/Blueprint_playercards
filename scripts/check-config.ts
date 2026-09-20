@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { validateDesign } from '../src/server/design-config';
 import { loadConfiguration } from '../src/server/bootstrap';
 
 try {
@@ -9,6 +11,7 @@ try {
   }
   const directory = args[1] ? resolve(args[1]) : fileURLToPath(new URL('../config/', import.meta.url));
   const config = loadConfiguration(directory);
+  validateDesign(JSON.parse(readFileSync(join(directory,'layout.json'),'utf8')),JSON.parse(readFileSync(join(directory,'effect.json'),'utf8')));
   console.info(`Configuration valid: ${config.activeVersion}; ${config.registry.size} immutable rarity version(s); ${config.events.length} event definitions.`);
 } catch (error) {
   console.error(`Configuration invalid: ${error instanceof Error ? error.message : 'validation failed'}`);

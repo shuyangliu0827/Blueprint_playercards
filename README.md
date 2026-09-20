@@ -1,92 +1,56 @@
-# 个人数字篮球卡 v3 内部预览原型
+# 蓝本 BLUEPRINT · 个人数字篮球卡 v0
 
-本目录是仅依据用户提供的 v3 文档、v3 逻辑图及本次补充要求创建的独立项目。当前交付第一批中不依赖设计稿的配置、抽取与校验模块。没有沿用外层工作区的旧实现。
+v3 开发期预览与团队内部评审。第一、二、三批完整实现：照片在浏览器内处理，图像生成是明确标注的本地 Mock。
 
-## 运行验证
+- Next.js App Router / React / TypeScript，Node.js 24。
+- 五档 WebGL1 单四边形材质、CSS3D 翻面、静态反光降级。
+- 卡图1500×2100、海报1080×1440、缩略图1000×800、主动对比图2400×1600，全部浏览器合成。
+- 服务端 HMAC 确定性抽取；五档40/26/18/11/5，首抽非基础保底；概率与密钥不进客户端。
+- 异步内存任务、3次成功发卡、单次重试、失败返还与原结果恢复。
+- 无登录/支付/持久化卡册/外部存储/真实图像或语言模型 API。
 
-使用 Node.js 24：
+## 本地运行
 
 ```sh
 npm ci
-npm run check
+node scripts/start-local.mjs
+npm run dev
 ```
 
-`check` 依次执行配置启动检查、严格类型检查、全部单元测试。配置检查不需要真实密钥，也不会读取 `.env.local`。测试只使用公开的测试密钥，没有调用外部 API 或存储。
+`start-local.mjs` 仅在缺失时生成 `.env.local` 两个随机服务端秘密，已被Git忽略。生产配置 `DRAW_HMAC_SECRET`、`IP_HASH_SALT` 至少32字节，通过部署环境设置；禁止 `NEXT_PUBLIC_` 前缀。
 
-目前没有 H5 页面，不能用本批验证真实生成质量或用户保存意愿；H5 与生成任务调度按第三批计划接入。
+```sh
+npm run check
+npm run build
+npm start
+```
 
-## 文件分层
+入口 `/`，缩略图与五档材质评审 `/debug/thumbnails`。上传页底部“内部评审设置”可切换正常/0.5秒模拟和失败路径。页脚数据面板仅显示当前匿名身份事件。
+
+## 目录与可替换边界
 
 | 目录 | 职责 |
-| --- | --- |
-| `config/rarity_v0.json` | 确认的五档概率和首抽规则，只在服务端加载 |
-| `config/rarity_registry.json` | 活跃版本、保留版本文件和 SHA-256 内容指纹 |
-| `config/input_schema.json` | 五项输入、照片门槛与独立声明规则 |
-| `config/player_names.json` | 可维护的静态球员姓名与别名禁用词库 |
-| `config/pose_rules.json` | 九个 poseId、未知角度回退、惯用手镜像约定 |
-| `config/story_templates.json` | 卡背句式与位置显示名称 |
-| `config/events_dictionary.csv` | 事件、字段、可信来源、统计归属与口径备注 |
-| `config/metrics_v0.json` | 第 10 节原门槛、用户修正后的指标及停用口径标记 |
-| `config/preview_rules.json` | 3 次免费、匿名双写及 IP 污染记录的已确认窗口和阈值 |
-| `src/core/` | 无框架、无文件/网络/环境变量访问的业务纯函数 |
-| `src/config/validate.ts` | 概率配置的结构与已确认参数校验 |
-| `src/server/` | 文件加载、内容指纹、密钥/HMAC、启动校验与服务工厂 |
-| `tests/` | 业务边界、统计分布、可移植性与真实启动失败测试 |
+|---|---|
+| `src/core` | 框架无关抽取、requestId解析、输入/姿势/文案/埋点、模拟延迟 |
+| `src/server` | HMAC、固定配置、内存任务与签名ref/匿名cookie |
+| `src/render` | JSON版式、WebGL1材质、纯输入响应、分享合成与PNG元数据 |
+| `src/platform` | H5文件/触摸/陀螺仪/人脸检测/网络；小程序空接口 |
+| `src/generator` | MockGenerator / RealGenerator空实现 / 人工质检钩子 |
+| `config` | 全部规则、layout/effect与schema、generation_contract、事件字典 |
+| `public` | 三张授权复用示例、本地WASM/人脸模型、纹理和预渲染反光 |
 
-卡面与材质 schema 仍在外层 `docs/v3-schema-review/` 供设计师审阅，本次未修改。后续 UI 只取需要的公开配置；不要把服务端配置目录放进 `public/`，也不要在客户端导入抽取实现或概率校验器。
+`requestId = uuid + ':' + firstFlag + ':' + configVersion`，抽取解析requestId中的首抽和版本。客户端可伪造首抽的v0让步保留；生产必须改服务端权威首抽和持久化去重。旧版本配置指纹不可修改，密钥轮换会改变结果。
 
-## 抽取契约
+## 验收与推荐决定
 
-```ts
-draw(config, seed, isFirstDraw)
-// => { tier, cardId, configVersion }
-```
+详细见 [交付与推荐记录](docs/delivery-notes.md)、[资产登记](docs/assets-register.md)、[后端决定](docs/backend-decisions.md)、[照片处理](docs/photo-decisions.md)、[事件口径](docs/events-decisions.md)。设计参数根级 `_placeholder: true` 是可替换的工程初版，不把推荐值冒充设计师定稿。
 
-纯函数接收 64 位十六进制的 HMAC-SHA256 结果作为 seed，不读取当前匿名状态、当前时间或随机源。使用 256 位整数映射权重区间，五档顺序固定，不受 JSON 数组重排影响。首抽使用 26∶18∶11∶5 的原权重归一，未使用 43.33 等展示值计算。
+自动化完整流程：开发服务启动后运行 `node scripts/e2e.mjs`、`node scripts/render-regressions.mjs`、`node scripts/check-exports.mjs`。需要本机Chrome；测试仅使用仓库中的合成示例照片。`TEST_URL` 可切换到线上网址。截图/结果在 `docs` 下。
 
-服务端调用关系：
+## 预览限制
 
-```ts
-const service = createDrawService(configDirectory, process.env);
-service.publicConfig; // 仅 { configVersion }
-service.draw(requestId); // 仅 { tier, cardId, configVersion }
-```
+照片和成品只在浏览器内存，刷新后需要重选。服务端全部状态在进程内存，Vercel重启/多实例会丢失或不一致；这是用户明确接受的内部预览限制。原requestId在同密钥/配置下的抽取仍不变。客户端可绕过免费次数和首抽，只适用于不收费的内部评审。
 
-`requestId = uuid + ':' + (isFirstDraw ? '1' : '0') + ':' + configVersion`。服务端按完整请求号计算 `HMAC-SHA256(DRAW_HMAC_SECRET, requestId)`，从请求号解析首抽标志和配置版本；未知版本拒绝，不换成最新版。返回的 cardId 是该 seed 的确定性十六进制标识，不是限量编号、产权或价值证明，也不得作为鉴权凭据。
+传播主指标是服务端签名ref去重回流；`share_asset_generated`仅是保存率上界。自动入册、打开面板、失败重试均不分别冒充主动保存、实际传播、再次创作。当前样本是自动化验证，不是第10节产品假设得到证明。
 
-v0 让步。生产环境必须改为服务端权威判定首抽状态 + 持久化 requestId 去重。
-
-零存储幂等的前提是保留原版本配置与同一密钥。密钥变化会改变输出；不能在没有迁移策略的情况下轮换密钥并仍宣称旧请求结果不变。未来增加配置版本时另增文件及注册项，原版本文件和指纹不得改写。版本查找只依赖注册表，不需要数据库。
-
-`createDrawService` 先检查密钥及全部非视觉配置，再返回可调用服务。档数不等于五、概率总和不为 100、重复或未知档位、已确认权重变化、首抽规则错误、版本指纹不匹配等均拒绝启动。文件校验器通过 CLI 返回非零退出码，不只是控制台告警。
-
-`server-only` 防止服务端适配层误入客户端；Node HMAC 与文件访问均在该层。纯抽取另经浏览器目标打包和无 Node/DOM API 的隔离环境执行验证。
-
-## 统计口径
-
-- `share_asset_generated`：合成完成且图片已向用户呈现，用于主动保存率的**上界**；其中包括未实际保存的人。
-- `share_asset_download_triggered`：非微信环境触发下载；不声称落盘成功。
-- `share_longpress_hint_shown`：微信环境展示长按提示；不声称保存成功。
-- `shared_link_opened`：由服务端确认 ref 后记录的访客访问，按 anonId 去重，是传播主指标。
-- 自动入册、打开分享面板不算保存；失败重试和质量修复不算再次主动生成。
-- IP 污染聚合事件不进入比率指标；被观察到污染信号的用户正常行为仍按原口径记录。
-
-旧主动分享率的 25% / 15% 门槛保留但标为已停用，未擅自将其挪给另一个事件。其余第 10 节数值保持原样。代码中的统计结果不证明模拟阶段已经达到真实内测门槛。
-
-## 本次工程判断
-
-- 项目独立放在 `v0-prototype`，避免覆盖或复用旧实现；Node 24 及锁文件用于复现验证环境。
-- 概率文件按内容指纹锁定，配置版本采用 `v0.1.0`；这是工程版本标识，不是新增产品参数。
-- 10MB 解释为十进制 10,000,000 字节。拒绝无效图片元数据；低于 1024 像素仅警告。人脸检测本批只接收结构化结果，不实现检测器。
-- 昵称做 NFKC 与首尾空白清理；按完整别名匹配禁用词，避免子串误伤。允许常见拉丁名字分隔符；词库非穷尽、非实时名单。
-- 姿势素材以右手为规范，左手仅设置 mirror；不设计九种动作的具体内容。
-- 卡背采用本批编写的程序句式，没有调用语言模型；设计师后续可替换模板文案，校验仍约束 2–3 句、最多 80 字。
-- 统计分布测试用固定输入序列和六倍标准差/卡方界限检查实现；这是测试容差，不是对用户出卡次数的承诺。
-
-更详细的输入及统计判断见 `docs/input-decisions.md` 与 `docs/events-decisions.md`。
-
-## 本批边界与后续
-
-不依赖设计的部分可运行、可测，不被 schema 审阅阻塞。layout/effect 的设计反馈与正式资产仍待提供；三张示例卡须在第三批交付前替换。
-
-此批没有实现卡面/WebGL/分享图，也没有执行真实人脸检测、MockGenerator 任务、重试返还流程、匿名 cookie/localStorage 或 IP 聚合适配器；相关规则与事件为后续接入契约，不等于运行链路已经完成。第二批和第三批仍须各自验收。GitHub 私有远程仓库与 Vercel 部署留在后续发布批次，不读取或复用外层已有部署配置。
+商业上线前仍需实际模型选型与质量评测、设计定稿、存储地域与隐私/合规检查；本次未实现或暗示完成这些内容。

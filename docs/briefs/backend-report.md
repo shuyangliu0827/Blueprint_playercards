@@ -1,0 +1,11 @@
+# Backend batch 3 report
+
+Implemented a memory-only asynchronous preview service plus `POST /api/preview`. The endpoint supports `session`, `submit`, `poll`, `complete`, `restore`, `render-failed`, `events`, and `metrics`, returns `no-store`, enforces a 20 KB JSON limit and exact action fields, and uses a signed HTTP-only anonymous cookie.
+
+The job service provides deterministic draws, pose routing, three-slot reservation, completion-only success accounting, a single retry, terminal refunds, same-draw recovery, request replay, and `TASK_EXPIRED` recovery. Completed quota and idempotency survive full-job pruning through identity counters and compact tombstones. Untouched reservations expire after 30 minutes and become recoverable failures. Timing is poll-driven without timers. Normal timing uses a continuous inverse CDF pinned at P50 12 seconds and P95 40 seconds; fast review mode is 500 ms. Random outcome classification is sampled separately from latency.
+
+Analytics include server-recorded generation lifecycle events, an explicit client allowlist that excludes `auto_collected`, strict validation and deduplication, referral verification and self-exclusion, per-owner metric visibility, and salted in-memory IP pollution aggregation. Event retention uses server receipt time, so future-dated client timestamps cannot pin storage. No raw IP, image content, nickname, or other free-form data is retained in analytics.
+
+Tests cover configurable timing and outcome thresholds, concurrent quota reservation, completion idempotency after age and capacity pruning, idle quota continuity, abandoned-reservation recovery, first-draw behavior, failure/retry/refund, restoration, deterministic request replay, strict input/no-image handling, cookie and referral signatures including a creator absent locally, referral deduplication/self-exclusion, collection-event spoofing, receipt-time event expiry, raw-IP absence, and exact main and auxiliary IP thresholds including identity movement between IPs.
+
+Concern: process restarts erase all service state. At bounded capacity, new work receives `QUEUE_BUSY`; existing active jobs are retained. Production also needs a hosting-specific trusted proxy adapter and durable, server-authoritative first-success issuance.

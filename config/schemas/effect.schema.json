@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "effect.json 字段草案（待设计师确认）",
+  "description": "WebGL1 单四边形材质参数、输入响应曲线及静态反光降级配置。字段结构为工程草案，具体视觉参数由设计师确认。",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "effectVersion", "templateVersion", "_placeholder", "surface", "input", "fallbackPolicy", "materials"],
+  "properties": {
+    "schemaVersion": { "type": "string", "minLength": 1 },
+    "effectVersion": { "type": "string", "minLength": 1 },
+    "templateVersion": { "type": "string", "minLength": 1 },
+    "_placeholder": { "$ref": "#/$defs/placeholder" },
+    "notes": { "type": "string" },
+    "surface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["slotId", "uvOrigin", "alphaMode"],
+      "properties": {
+        "slotId": { "$ref": "#/$defs/id" },
+        "uvOrigin": { "const": "top-left", "description": "纹理加载适配层统一为左上角原点，不由各平台自行改变。" },
+        "alphaMode": { "const": "straight", "description": "输出 RGBA 透明反光叠层，普通 source-over 合成，不使用 CSS mix-blend-mode。" }
+      }
+    },
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preferredSource", "pointerFallback", "smoothingMs", "returnToRestMs"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "preferredSource": { "enum": ["pointer", "orientation"] },
+        "pointerFallback": { "type": "boolean", "description": "姿态传感不可用或未获授权时是否采用指针/触摸；不能阻塞出片。" },
+        "smoothingMs": { "type": "number", "minimum": 0 },
+        "returnToRestMs": { "type": "number", "minimum": 0 }
+      }
+    },
+    "fallbackPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["onWebGLUnavailable", "onContextLost", "lowFps", "recovery"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "onWebGLUnavailable": { "const": "static" },
+        "onContextLost": { "const": "static" },
+        "lowFps": {
+          "type": "object", "additionalProperties": false,
+          "required": ["threshold", "sampleWindowMs", "consecutiveWindows", "warmupMs", "ignoreWhenHidden"],
+          "properties": {
+            "_placeholder": { "$ref": "#/$defs/placeholder" },
+            "threshold": { "type": "number", "exclusiveMinimum": 0 },
+            "sampleWindowMs": { "type": "number", "exclusiveMinimum": 0 },
+            "consecutiveWindows": { "type": "integer", "minimum": 1 },
+            "warmupMs": { "type": "number", "minimum": 0 },
+            "ignoreWhenHidden": { "const": true }
+          },
+          "description": "连续低帧率窗口触发静态降级；数值未在输入材料中指定，后续仅可先用显式占位值。"
+        },
+        "recovery": { "enum": ["next-mount", "manual"], "description": "避免静态与动态自动来回闪烁。" }
+      }
+    },
+    "materials": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": { "$ref": "#/$defs/material" },
+      "allOf": [
+        { "contains": { "properties": { "id": { "const": "base" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "silver" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "prism" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "gold" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "obsidian" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 }
+      ]
+    }
+  },
+  "$defs": {
+    "placeholder": { "type": "boolean", "description": "根级 true 表示整份配置占位；子级 true 可标注局部占位，不能用 false 取消父级占位。" },
+    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$" },
+    "assetRef": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*://)(?!.*(?:^|/)\\.\\.(?:/|$))[^?#\\\\]+$", "description": "相对资产根目录的引用，由平台适配层解析。" },
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{8}$" },
+    "vec2": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+    "vec3": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number" } },
+    "texture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assetRef", "uvScale", "uvOffset", "rotationDeg", "filter", "wrap", "colorSpace"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "assetRef": { "$ref": "#/$defs/assetRef" },
+        "uvScale": { "$ref": "#/$defs/vec2" },
+        "uvOffset": { "$ref": "#/$defs/vec2" },
+        "rotationDeg": { "type": "number" },
+        "filter": { "enum": ["nearest", "linear"] },
+        "wrap": { "const": "clamp-to-edge", "description": "保持 WebGL1 非二次幂纹理可用，不依赖 mipmap；需平铺时由 shader 使用 UV 实现。" },
+        "colorSpace": { "enum": ["linear", "srgb"] }
+      }
+    },
+    "mask": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assetRef", "channel", "invert", "uvSpace"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "assetRef": { "$ref": "#/$defs/assetRef" },
+        "channel": { "enum": ["r", "g", "b", "a", "luminance"] },
+        "invert": { "type": "boolean" },
+        "uvSpace": { "const": "surface", "description": "整张遮罩拉伸到 layout 中材质图层矩形，保持与该图层相同的左上原点。" }
+      }
+    },
+    "material": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "textures", "coverageMask", "protectMask", "uniforms", "responseCurves", "staticFallback"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "notes": { "type": "string" },
+        "id": { "enum": ["base", "silver", "prism", "gold", "obsidian"] },
+        "label": { "type": "string", "minLength": 1 },
+        "textures": {
+          "type": "object", "additionalProperties": false,
+          "required": ["normal", "noise"],
+          "properties": {
+            "normal": { "oneOf": [{ "$ref": "#/$defs/texture" }, { "type": "null" }], "description": "RGB 对应切线空间 XYZ，解码为 [-1,1]；X 向右、Y 向上、Z 朝观察者。null 表示平面法线。" },
+            "noise": { "oneOf": [{ "$ref": "#/$defs/texture" }, { "type": "null" }], "description": "采样 R 通道；null 表示不附加噪声扰动。" }
+          }
+        },
+        "coverageMask": { "$ref": "#/$defs/mask", "description": "1 表示可覆盖，0 表示不覆盖。" },
+        "protectMask": { "$ref": "#/$defs/mask", "description": "1 表示保护五官等区域；最终覆盖为 coverage × (1 - protect)。" },
+        "uniforms": { "$ref": "#/$defs/uniforms" },
+        "responseCurves": { "type": "array", "items": { "$ref": "#/$defs/response" } },
+        "staticFallback": {
+          "type": "object", "additionalProperties": false,
+          "required": ["imageRef", "fit", "maskBakedIn", "captureUniforms"],
+          "properties": {
+            "_placeholder": { "$ref": "#/$defs/placeholder" },
+            "imageRef": { "$ref": "#/$defs/assetRef", "description": "预渲染的透明 RGBA PNG 反光叠层，不含用户头像与文字。必须随资产提供，不得在 WebGL 不可用时临时生成。" },
+            "fit": { "const": "stretch" },
+            "maskBakedIn": { "const": true, "description": "覆盖与保护遮罩已烘焙到 alpha，降级不需要 canvas 2d 生成材质。" },
+            "captureUniforms": { "$ref": "#/$defs/uniforms", "description": "制作静态降级图使用的参数，便于复现；与交互默认参数可不同。" }
+          }
+        }
+      }
+    },
+    "uniforms": {
+      "type": "object", "additionalProperties": false,
+      "required": ["strength", "dispersion", "specularSharpness", "normalScale", "noiseScale", "noiseStrength", "roughness", "anisotropy", "tint", "specularColor", "lightDirection", "ambient", "tiltX", "tiltY"],
+      "properties": {
+        "strength": { "type": "number", "minimum": 0, "maximum": 1, "description": "总反光强度。" },
+        "dispersion": { "type": "number", "minimum": 0, "maximum": 1, "description": "归一化色散量；0 为不色散，1 为 shader 支持的最大光谱展开。" },
+        "specularSharpness": { "type": "number", "exclusiveMinimum": 0, "description": "镜面高光指数，越大越窄。" },
+        "normalScale": { "type": "number", "minimum": 0, "description": "法线 XY 扰动倍数。" },
+        "noiseScale": { "type": "number", "exclusiveMinimum": 0, "description": "表面 UV 中噪声的重复次数。" },
+        "noiseStrength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "anisotropy": { "type": "number", "minimum": -1, "maximum": 1 },
+        "tint": { "$ref": "#/$defs/color" },
+        "specularColor": { "$ref": "#/$defs/color" },
+        "lightDirection": { "$ref": "#/$defs/vec3", "description": "非零向量，使用材质局部坐标 X 右、Y 上、Z 朝观察者；使用前归一化。" },
+        "ambient": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tiltX": { "type": "number", "minimum": -1, "maximum": 1, "description": "观察方向 X 分量，Z 固定为 1 后整体归一化；不驱动 CSS 翻面。" },
+        "tiltY": { "type": "number", "minimum": -1, "maximum": 1, "description": "观察方向 Y 分量，Z 固定为 1 后整体归一化。" }
+      }
+    },
+    "response": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "target", "curve"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "source": { "enum": ["pointer.x", "pointer.y", "orientation.pitchDeg", "orientation.rollDeg"], "description": "pointer 已归一化为 [-1,1] 且右/上为正；orientation 是适配层完成屏幕方向补偿后相对中性姿态的角度，右/上为正。" },
+        "target": { "enum": ["tiltX", "tiltY", "strength", "dispersion", "specularSharpness", "normalScale", "noiseStrength", "roughness", "anisotropy", "ambient"] },
+        "curve": { "$ref": "#/$defs/curve" }
+      },
+      "description": "曲线输出覆盖对应 uniform 初始值。只使用当前选中的输入源，指针与姿态不叠加；同类输入不能重复写同一 target。输出仍须满足该 uniform 的范围。"
+    },
+    "curve": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "points", "outside"],
+          "properties": {
+            "kind": { "const": "piecewise-linear" },
+            "points": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/vec2" }, "description": "每项为 [输入, 输出]，输入严格递增；两个点即可表示线性响应。" },
+            "outside": { "const": "clamp" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "inputRange", "outputRange", "controlPoints", "outside"],
+          "properties": {
+            "kind": { "const": "cubic-bezier" },
+            "inputRange": { "$ref": "#/$defs/vec2", "description": "[起点, 终点]，起点须小于终点。" },
+            "outputRange": { "$ref": "#/$defs/vec2" },
+            "controlPoints": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number", "minimum": 0, "maximum": 1 }, "description": "[x1,y1,x2,y2]，以 (0,0) 与 (1,1) 为端点；先反解曲线 x 再取 y，映射至输出范围。" },
+            "outside": { "const": "clamp" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -4,3 +4,7 @@ node_modules/
 coverage/
 .next/
 *.tsbuildinfo
+.vercel/
+playwright-report/
+test-results/
+.vercel

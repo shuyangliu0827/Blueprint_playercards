@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "layout.json 字段草案（待设计师确认）",
+  "description": "只定义配置结构，不提供已定稿设计值。卡片正反面共用画布与坐标体系，所有尺寸为设计像素。运行时按输出尺寸等比缩放。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "templateVersion", "_placeholder", "canvas", "safeArea", "fonts", "front", "back"],
+  "properties": {
+    "schemaVersion": { "type": "string", "minLength": 1 },
+    "templateVersion": { "type": "string", "minLength": 1 },
+    "_placeholder": { "$ref": "#/$defs/placeholder" },
+    "notes": { "type": "string" },
+    "canvas": {
+      "type": "object", "additionalProperties": false,
+      "required": ["width", "height", "dpi", "colorSpace"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "dpi": { "type": "number", "exclusiveMinimum": 0, "description": "导出像素密度元数据；不改变 width/height，也不承诺实际印刷尺寸。具体值待设计师确认。" },
+        "colorSpace": { "const": "srgb" }
+      }
+    },
+    "safeArea": { "$ref": "#/$defs/insets" },
+    "fonts": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "family", "source", "weights", "fallbacks", "rightsRef"],
+        "properties": {
+          "_placeholder": { "$ref": "#/$defs/placeholder" },
+          "id": { "$ref": "#/$defs/id" },
+          "family": { "type": "string", "minLength": 1 },
+          "source": { "oneOf": [{ "$ref": "#/$defs/assetRef" }, { "type": "null" }], "description": "本地字体资源；null 表示使用声明的系统字体。" },
+          "weights": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "integer", "minimum": 1, "maximum": 1000 } },
+          "fallbacks": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "rightsRef": { "type": "string", "minLength": 1, "description": "素材授权登记项 ID；占位阶段可明确写 pending，不得伪造授权。" }
+        }
+      }
+    },
+    "front": { "$ref": "#/$defs/face" },
+    "back": { "$ref": "#/$defs/face" }
+  },
+  "$defs": {
+    "placeholder": { "type": "boolean", "description": "true 表示程序占位。根标记为 true 时整份配置均为占位；子对象可额外标记 true，但不能用 false 取消父级标记。" },
+    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$" },
+    "assetRef": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*://)(?!.*(?:^|/)\\.\\.(?:/|$))[^?#\\\\]+$", "description": "相对资产根目录的文件引用，不含域名、绝对路径或父目录跳转，由平台适配层解析。" },
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{8}$", "description": "#RRGGBBAA，使用 sRGB。" },
+    "insets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["top", "right", "bottom", "left"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "top": { "type": "number", "minimum": 0 },
+        "right": { "type": "number", "minimum": 0 },
+        "bottom": { "type": "number", "minimum": 0 },
+        "left": { "type": "number", "minimum": 0 }
+      }
+    },
+    "rect": {
+      "type": "object", "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "point": {
+      "type": "object", "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "number", "minimum": 0, "maximum": 1 }, "y": { "type": "number", "minimum": 0, "maximum": 1 } }
+    },
+    "face": {
+      "type": "object", "additionalProperties": false,
+      "required": ["backgroundColor", "elements"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "backgroundColor": { "$ref": "#/$defs/color" },
+        "elements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/element" } }
+      }
+    },
+    "element": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type", "rect", "zIndex", "opacity", "rotationDeg", "safeAreaPolicy"],
+      "properties": {
+        "_placeholder": { "$ref": "#/$defs/placeholder" },
+        "notes": { "type": "string" },
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["text", "image", "shape", "material"] },
+        "rect": { "$ref": "#/$defs/rect" },
+        "zIndex": { "type": "integer", "description": "从小到大绘制；同一面不允许重复值，避免叠放顺序歧义。" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rotationDeg": { "type": "number", "description": "绕元素中心顺时针旋转，单位度。" },
+        "safeAreaPolicy": { "enum": ["inside", "bleed"], "description": "inside 须落在安全区内；bleed 用于背景、边框等出血元素。" },
+        "clip": {
+          "type": "object", "additionalProperties": false,
+          "required": ["radius", "maskRef"],
+          "properties": {
+            "radius": { "type": "number", "minimum": 0 },
+            "maskRef": { "oneOf": [{ "$ref": "#/$defs/assetRef" }, { "type": "null" }] }
+          },
+          "description": "先按元素矩形裁切，再应用圆角及可选 alpha 蒙版。"
+        },
+        "text": { "$ref": "#/$defs/text" },
+        "image": { "$ref": "#/$defs/image" },
+        "shape": { "$ref": "#/$defs/shape" },
+        "material": {
+          "type": "object", "additionalProperties": false,
+          "required": ["slotId"],
+          "properties": { "slotId": { "$ref": "#/$defs/id", "description": "与 effect.json 中 surface.slotId 对应；实际档位来自抽取结果。" } }
+        }
+      },
+      "oneOf": [
+        { "properties": { "type": { "const": "text" }, "image": false, "shape": false, "material": false }, "required": ["text"] },
+        { "properties": { "type": { "const": "image" }, "text": false, "shape": false, "material": false }, "required": ["image"] },
+        { "properties": { "type": { "const": "shape" }, "text": false, "image": false, "material": false }, "required": ["shape"] },
+        { "properties": { "type": { "const": "material" }, "text": false, "image": false, "shape": false }, "required": ["material"] }
+      ]
+    },
+    "text": {
+      "type": "object", "additionalProperties": false,
+      "required": ["content", "fontRef", "fontSize", "fontWeight", "color", "align", "verticalAlign", "lineHeight", "letterSpacing", "maxLines", "padding", "overflow"],
+      "properties": {
+        "content": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["literal"], "properties": { "literal": { "type": "string", "minLength": 1 } } },
+            { "type": "object", "additionalProperties": false, "required": ["binding"], "properties": { "binding": { "enum": ["nickname", "jerseyNumber", "position", "handedness", "cardId", "aiLabel", "tierName", "issuedAt", "story", "seriesName"] }, "prefix": { "type": "string" }, "suffix": { "type": "string" } } }
+          ],
+          "description": "固定文字或业务字段绑定，不能包含可执行表达式。号码绑定使用保留前导零的字符串。"
+        },
+        "fontRef": { "$ref": "#/$defs/id" },
+        "fontSize": { "type": "number", "exclusiveMinimum": 0 },
+        "fontWeight": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "color": { "$ref": "#/$defs/color" },
+        "align": { "enum": ["left", "center", "right"] },
+        "verticalAlign": { "enum": ["top", "middle", "bottom"] },
+        "lineHeight": { "type": "number", "exclusiveMinimum": 0, "description": "字号的倍数；缩字号时同比变化。" },
+        "letterSpacing": { "type": "number", "description": "设计像素。" },
+        "maxLines": { "type": "integer", "minimum": 1 },
+        "padding": { "$ref": "#/$defs/insets" },
+        "overflow": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["strategy", "minFontSize", "onExhausted"], "properties": { "strategy": { "const": "shrink" }, "minFontSize": { "type": "number", "exclusiveMinimum": 0 }, "onExhausted": { "enum": ["ellipsis", "reject"] } } },
+            { "type": "object", "additionalProperties": false, "required": ["strategy", "ellipsis"], "properties": { "strategy": { "const": "truncate" }, "ellipsis": { "type": "string", "minLength": 1 } } },
+            { "type": "object", "additionalProperties": false, "required": ["strategy"], "properties": { "strategy": { "const": "reject" } } }
+          ],
+          "description": "按 Unicode 字素簇处理。cardId、号码、AI 标识等必读字段不得截断；额外语义校验约束。"
+        }
+      }
+    },
+    "image": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "fit", "anchor"],
+      "properties": {
+        "source": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["assetRef"], "properties": { "assetRef": { "$ref": "#/$defs/assetRef" } } },
+            { "type": "object", "additionalProperties": false, "required": ["binding"], "properties": { "binding": { "enum": ["generatedArtwork"] } } }
+          ]
+        },
+        "fit": { "enum": ["cover", "contain", "stretch"] },
+        "anchor": { "$ref": "#/$defs/point", "description": "裁切锚点，相对于原图的归一化坐标。" }
+      }
+    },
+    "shape": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "fill", "stroke", "strokeWidth", "radius"],
+      "properties": {
+        "kind": { "enum": ["rectangle", "ellipse"] },
+        "fill": { "$ref": "#/$defs/color" },
+        "stroke": { "$ref": "#/$defs/color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "radius": { "type": "number", "minimum": 0, "description": "矩形圆角；ellipse 必须为 0。复杂边框与矢量装饰使用 image 的 SVG 资产。" }
+      }
+    }
+  }
+}

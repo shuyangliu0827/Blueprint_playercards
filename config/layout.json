@@ -1,0 +1,1023 @@
+{
+  "schemaVersion": "1.0.0",
+  "templateVersion": "blueprint-v0.1",
+  "_placeholder": true,
+  "notes": "按用户授权复用旧视觉语言的程序设计初版，所有数值可整体替换；未添加旧版业务字段。",
+  "canvas": {
+    "width": 1500,
+    "height": 2100,
+    "dpi": 300,
+    "colorSpace": "srgb"
+  },
+  "safeArea": {
+    "top": 70,
+    "right": 70,
+    "bottom": 70,
+    "left": 70
+  },
+  "fonts": [
+    {
+      "id": "sans",
+      "family": "Arial",
+      "source": null,
+      "weights": [
+        400,
+        500,
+        800
+      ],
+      "fallbacks": [
+        "PingFang SC",
+        "Microsoft YaHei",
+        "sans-serif"
+      ],
+      "rightsRef": "system-fonts-no-redistribution"
+    }
+  ],
+  "front": {
+    "backgroundColor": "#070D16FF",
+    "elements": [
+      {
+        "id": "frame",
+        "type": "shape",
+        "rect": {
+          "x": 22,
+          "y": 22,
+          "w": 1456,
+          "h": 2056
+        },
+        "zIndex": 0,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#CDD0D3FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "frame-dark",
+        "type": "shape",
+        "rect": {
+          "x": 32,
+          "y": 32,
+          "w": 1436,
+          "h": 2036
+        },
+        "zIndex": 1,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#151C28FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "frame-line",
+        "type": "shape",
+        "rect": {
+          "x": 45,
+          "y": 45,
+          "w": 1410,
+          "h": 2010
+        },
+        "zIndex": 2,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#101723FF",
+          "stroke": "#818C9EFF",
+          "strokeWidth": 3,
+          "radius": 4
+        }
+      },
+      {
+        "id": "artwork",
+        "type": "image",
+        "rect": {
+          "x": 60,
+          "y": 200,
+          "w": 1380,
+          "h": 1485
+        },
+        "zIndex": 3,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "image": {
+          "source": {
+            "binding": "generatedArtwork"
+          },
+          "fit": "cover",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.42
+          }
+        }
+      },
+      {
+        "id": "header",
+        "type": "shape",
+        "rect": {
+          "x": 60,
+          "y": 60,
+          "w": 1380,
+          "h": 174
+        },
+        "zIndex": 4,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#0C121EFF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "brand",
+        "type": "text",
+        "rect": {
+          "x": 100,
+          "y": 86,
+          "w": 690,
+          "h": 66
+        },
+        "zIndex": 5,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "literal": "B.  蓝本"
+          },
+          "fontRef": "sans",
+          "fontSize": 58,
+          "fontWeight": 800,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "brand-sub",
+        "type": "text",
+        "rect": {
+          "x": 105,
+          "y": 154,
+          "w": 900,
+          "h": 36
+        },
+        "zIndex": 6,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "literal": "BLUEPRINT  /  YOUR GAME, YOUR CARD"
+          },
+          "fontRef": "sans",
+          "fontSize": 24,
+          "fontWeight": 500,
+          "color": "#9CAEC4FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "name-panel",
+        "type": "shape",
+        "rect": {
+          "x": 60,
+          "y": 1575,
+          "w": 1380,
+          "h": 465
+        },
+        "zIndex": 7,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#101723EF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "accent",
+        "type": "shape",
+        "rect": {
+          "x": 104,
+          "y": 1640,
+          "w": 130,
+          "h": 7
+        },
+        "zIndex": 8,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#DDD194FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "edition",
+        "type": "text",
+        "rect": {
+          "x": 260,
+          "y": 1618,
+          "w": 690,
+          "h": 45
+        },
+        "zIndex": 9,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "tierName"
+          },
+          "fontRef": "sans",
+          "fontSize": 27,
+          "fontWeight": 500,
+          "color": "#DDD194FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "nickname",
+        "type": "text",
+        "rect": {
+          "x": 100,
+          "y": 1685,
+          "w": 1260,
+          "h": 180
+        },
+        "zIndex": 10,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "nickname"
+          },
+          "fontRef": "sans",
+          "fontSize": 144,
+          "fontWeight": 800,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "position",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1870,
+          "w": 690,
+          "h": 64
+        },
+        "zIndex": 11,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "position"
+          },
+          "fontRef": "sans",
+          "fontSize": 38,
+          "fontWeight": 500,
+          "color": "#B5C4D5FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "jersey",
+        "type": "text",
+        "rect": {
+          "x": 1120,
+          "y": 92,
+          "w": 240,
+          "h": 130
+        },
+        "zIndex": 12,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "jerseyNumber"
+          },
+          "fontRef": "sans",
+          "fontSize": 118,
+          "fontWeight": 800,
+          "color": "#F4F3ECFF",
+          "align": "right",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "ai",
+        "type": "text",
+        "rect": {
+          "x": 950,
+          "y": 1904,
+          "w": 410,
+          "h": 40
+        },
+        "zIndex": 13,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "aiLabel"
+          },
+          "fontRef": "sans",
+          "fontSize": 25,
+          "fontWeight": 400,
+          "color": "#A5B4C6FF",
+          "align": "right",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "id",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1965,
+          "w": 1260,
+          "h": 28
+        },
+        "zIndex": 14,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "cardId"
+          },
+          "fontRef": "sans",
+          "fontSize": 24,
+          "fontWeight": 500,
+          "color": "#8392A6FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "foil",
+        "type": "material",
+        "rect": {
+          "x": 48,
+          "y": 48,
+          "w": 1404,
+          "h": 2004
+        },
+        "zIndex": 15,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "material": {
+          "slotId": "card-surface"
+        }
+      }
+    ]
+  },
+  "back": {
+    "backgroundColor": "#070D16FF",
+    "elements": [
+      {
+        "id": "frame",
+        "type": "shape",
+        "rect": {
+          "x": 22,
+          "y": 22,
+          "w": 1456,
+          "h": 2056
+        },
+        "zIndex": 0,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#CDD0D3FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "frame-dark",
+        "type": "shape",
+        "rect": {
+          "x": 32,
+          "y": 32,
+          "w": 1436,
+          "h": 2036
+        },
+        "zIndex": 1,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#151C28FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "frame-line",
+        "type": "shape",
+        "rect": {
+          "x": 45,
+          "y": 45,
+          "w": 1410,
+          "h": 2010
+        },
+        "zIndex": 2,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#101723FF",
+          "stroke": "#818C9EFF",
+          "strokeWidth": 3,
+          "radius": 4
+        }
+      },
+      {
+        "id": "brand",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 120,
+          "w": 1100,
+          "h": 100
+        },
+        "zIndex": 3,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "literal": "B.  蓝本"
+          },
+          "fontRef": "sans",
+          "fontSize": 80,
+          "fontWeight": 800,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "backsub",
+        "type": "text",
+        "rect": {
+          "x": 110,
+          "y": 240,
+          "w": 1200,
+          "h": 60
+        },
+        "zIndex": 4,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "literal": "THE STORY BEHIND THE GAME"
+          },
+          "fontRef": "sans",
+          "fontSize": 28,
+          "fontWeight": 500,
+          "color": "#A9B6C6FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "line-a",
+        "type": "shape",
+        "rect": {
+          "x": 105,
+          "y": 400,
+          "w": 1290,
+          "h": 3
+        },
+        "zIndex": 5,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#657185FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "nickname",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 486,
+          "w": 1260,
+          "h": 150
+        },
+        "zIndex": 6,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "nickname"
+          },
+          "fontRef": "sans",
+          "fontSize": 124,
+          "fontWeight": 800,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "number",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 710,
+          "w": 1260,
+          "h": 75
+        },
+        "zIndex": 7,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "jerseyNumber",
+            "prefix": "球衣号码  /  "
+          },
+          "fontRef": "sans",
+          "fontSize": 43,
+          "fontWeight": 500,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "position",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 815,
+          "w": 1260,
+          "h": 75
+        },
+        "zIndex": 8,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "position",
+            "prefix": "场上位置  /  "
+          },
+          "fontRef": "sans",
+          "fontSize": 43,
+          "fontWeight": 500,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "hand",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 920,
+          "w": 1260,
+          "h": 75
+        },
+        "zIndex": 9,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "handedness",
+            "prefix": "惯用手  /  "
+          },
+          "fontRef": "sans",
+          "fontSize": 43,
+          "fontWeight": 500,
+          "color": "#F4F3ECFF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "line-b",
+        "type": "shape",
+        "rect": {
+          "x": 105,
+          "y": 1110,
+          "w": 1290,
+          "h": 3
+        },
+        "zIndex": 10,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "bleed",
+        "shape": {
+          "kind": "rectangle",
+          "fill": "#657185FF",
+          "stroke": "#00000000",
+          "strokeWidth": 0,
+          "radius": 4
+        }
+      },
+      {
+        "id": "story",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1200,
+          "w": 1240,
+          "h": 490
+        },
+        "zIndex": 11,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "story"
+          },
+          "fontRef": "sans",
+          "fontSize": 49,
+          "fontWeight": 400,
+          "color": "#D1D9E3FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "tier",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1760,
+          "w": 1260,
+          "h": 60
+        },
+        "zIndex": 12,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "tierName"
+          },
+          "fontRef": "sans",
+          "fontSize": 36,
+          "fontWeight": 500,
+          "color": "#DDD194FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "ai",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1850,
+          "w": 1260,
+          "h": 60
+        },
+        "zIndex": 13,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "aiLabel"
+          },
+          "fontRef": "sans",
+          "fontSize": 30,
+          "fontWeight": 500,
+          "color": "#A9B6C6FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      },
+      {
+        "id": "id",
+        "type": "text",
+        "rect": {
+          "x": 104,
+          "y": 1960,
+          "w": 1260,
+          "h": 28
+        },
+        "zIndex": 14,
+        "opacity": 1,
+        "rotationDeg": 0,
+        "safeAreaPolicy": "inside",
+        "text": {
+          "content": {
+            "binding": "cardId"
+          },
+          "fontRef": "sans",
+          "fontSize": 24,
+          "fontWeight": 500,
+          "color": "#8392A6FF",
+          "align": "left",
+          "verticalAlign": "middle",
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "maxLines": 1,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "overflow": {
+            "strategy": "shrink",
+            "minFontSize": 18,
+            "onExhausted": "reject"
+          }
+        }
+      }
+    ]
+  }
+}

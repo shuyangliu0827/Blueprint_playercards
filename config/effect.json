@@ -1,0 +1,947 @@
+{
+  "schemaVersion": "1.0.0",
+  "effectVersion": "foil-v0.1",
+  "templateVersion": "blueprint-v0.1",
+  "_placeholder": true,
+  "notes": "WebGL1 单四边形透明反光层；材质参数为程序设计初版。",
+  "surface": {
+    "slotId": "card-surface",
+    "uvOrigin": "top-left",
+    "alphaMode": "straight"
+  },
+  "input": {
+    "preferredSource": "pointer",
+    "pointerFallback": true,
+    "smoothingMs": 110,
+    "returnToRestMs": 240
+  },
+  "fallbackPolicy": {
+    "onWebGLUnavailable": "static",
+    "onContextLost": "static",
+    "lowFps": {
+      "threshold": 24,
+      "sampleWindowMs": 1600,
+      "consecutiveWindows": 2,
+      "warmupMs": 2000,
+      "ignoreWhenHidden": true
+    },
+    "recovery": "next-mount"
+  },
+  "materials": [
+    {
+      "id": "base",
+      "label": "基础",
+      "textures": {
+        "normal": {
+          "assetRef": "materials/normal.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        },
+        "noise": {
+          "assetRef": "materials/noise.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        }
+      },
+      "coverageMask": {
+        "assetRef": "materials/coverage.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "protectMask": {
+        "assetRef": "materials/protect.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "uniforms": {
+        "strength": 0.08,
+        "dispersion": 0,
+        "specularSharpness": 36,
+        "normalScale": 0.6,
+        "noiseScale": 4,
+        "noiseStrength": 0.15,
+        "roughness": 0.26,
+        "anisotropy": 0.45,
+        "tint": "#D5DEECFF",
+        "specularColor": "#FFFFFFFF",
+        "lightDirection": [
+          -0.25,
+          0.4,
+          1
+        ],
+        "ambient": 0.02,
+        "tiltX": 0.2,
+        "tiltY": -0.15
+      },
+      "responseCurves": [
+        {
+          "source": "pointer.x",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "pointer.y",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.rollDeg",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.pitchDeg",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        }
+      ],
+      "staticFallback": {
+        "imageRef": "materials/base-static.png",
+        "fit": "stretch",
+        "maskBakedIn": true,
+        "captureUniforms": {
+          "strength": 0.08,
+          "dispersion": 0,
+          "specularSharpness": 36,
+          "normalScale": 0.6,
+          "noiseScale": 4,
+          "noiseStrength": 0.15,
+          "roughness": 0.26,
+          "anisotropy": 0.45,
+          "tint": "#D5DEECFF",
+          "specularColor": "#FFFFFFFF",
+          "lightDirection": [
+            -0.25,
+            0.4,
+            1
+          ],
+          "ambient": 0.02,
+          "tiltX": 0.35,
+          "tiltY": -0.22
+        }
+      }
+    },
+    {
+      "id": "silver",
+      "label": "银折",
+      "textures": {
+        "normal": {
+          "assetRef": "materials/normal.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        },
+        "noise": {
+          "assetRef": "materials/noise.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        }
+      },
+      "coverageMask": {
+        "assetRef": "materials/coverage.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "protectMask": {
+        "assetRef": "materials/protect.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "uniforms": {
+        "strength": 0.55,
+        "dispersion": 0.08,
+        "specularSharpness": 36,
+        "normalScale": 0.6,
+        "noiseScale": 4,
+        "noiseStrength": 0.15,
+        "roughness": 0.26,
+        "anisotropy": 0.45,
+        "tint": "#D9E6FFFF",
+        "specularColor": "#FFFFFFFF",
+        "lightDirection": [
+          -0.25,
+          0.4,
+          1
+        ],
+        "ambient": 0.09,
+        "tiltX": 0.2,
+        "tiltY": -0.15
+      },
+      "responseCurves": [
+        {
+          "source": "pointer.x",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "pointer.y",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.rollDeg",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.pitchDeg",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        }
+      ],
+      "staticFallback": {
+        "imageRef": "materials/silver-static.png",
+        "fit": "stretch",
+        "maskBakedIn": true,
+        "captureUniforms": {
+          "strength": 0.55,
+          "dispersion": 0.08,
+          "specularSharpness": 36,
+          "normalScale": 0.6,
+          "noiseScale": 4,
+          "noiseStrength": 0.15,
+          "roughness": 0.26,
+          "anisotropy": 0.45,
+          "tint": "#D9E6FFFF",
+          "specularColor": "#FFFFFFFF",
+          "lightDirection": [
+            -0.25,
+            0.4,
+            1
+          ],
+          "ambient": 0.09,
+          "tiltX": 0.35,
+          "tiltY": -0.22
+        }
+      }
+    },
+    {
+      "id": "prism",
+      "label": "棱镜",
+      "textures": {
+        "normal": {
+          "assetRef": "materials/normal.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        },
+        "noise": {
+          "assetRef": "materials/noise.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        }
+      },
+      "coverageMask": {
+        "assetRef": "materials/coverage.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "protectMask": {
+        "assetRef": "materials/protect.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "uniforms": {
+        "strength": 0.66,
+        "dispersion": 0.94,
+        "specularSharpness": 36,
+        "normalScale": 0.6,
+        "noiseScale": 4,
+        "noiseStrength": 0.15,
+        "roughness": 0.26,
+        "anisotropy": 0.45,
+        "tint": "#F2EDFFFF",
+        "specularColor": "#FFFFFFFF",
+        "lightDirection": [
+          -0.25,
+          0.4,
+          1
+        ],
+        "ambient": 0.13,
+        "tiltX": 0.2,
+        "tiltY": -0.15
+      },
+      "responseCurves": [
+        {
+          "source": "pointer.x",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "pointer.y",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.rollDeg",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.pitchDeg",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        }
+      ],
+      "staticFallback": {
+        "imageRef": "materials/prism-static.png",
+        "fit": "stretch",
+        "maskBakedIn": true,
+        "captureUniforms": {
+          "strength": 0.66,
+          "dispersion": 0.94,
+          "specularSharpness": 36,
+          "normalScale": 0.6,
+          "noiseScale": 4,
+          "noiseStrength": 0.15,
+          "roughness": 0.26,
+          "anisotropy": 0.45,
+          "tint": "#F2EDFFFF",
+          "specularColor": "#FFFFFFFF",
+          "lightDirection": [
+            -0.25,
+            0.4,
+            1
+          ],
+          "ambient": 0.13,
+          "tiltX": 0.35,
+          "tiltY": -0.22
+        }
+      }
+    },
+    {
+      "id": "gold",
+      "label": "金箔",
+      "textures": {
+        "normal": {
+          "assetRef": "materials/normal.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        },
+        "noise": {
+          "assetRef": "materials/noise.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        }
+      },
+      "coverageMask": {
+        "assetRef": "materials/coverage.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "protectMask": {
+        "assetRef": "materials/protect.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "uniforms": {
+        "strength": 0.61,
+        "dispersion": 0.09,
+        "specularSharpness": 36,
+        "normalScale": 0.6,
+        "noiseScale": 4,
+        "noiseStrength": 0.15,
+        "roughness": 0.26,
+        "anisotropy": 0.45,
+        "tint": "#FFC45CFF",
+        "specularColor": "#FFFFFFFF",
+        "lightDirection": [
+          -0.25,
+          0.4,
+          1
+        ],
+        "ambient": 0.1,
+        "tiltX": 0.2,
+        "tiltY": -0.15
+      },
+      "responseCurves": [
+        {
+          "source": "pointer.x",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "pointer.y",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.rollDeg",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.pitchDeg",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        }
+      ],
+      "staticFallback": {
+        "imageRef": "materials/gold-static.png",
+        "fit": "stretch",
+        "maskBakedIn": true,
+        "captureUniforms": {
+          "strength": 0.61,
+          "dispersion": 0.09,
+          "specularSharpness": 36,
+          "normalScale": 0.6,
+          "noiseScale": 4,
+          "noiseStrength": 0.15,
+          "roughness": 0.26,
+          "anisotropy": 0.45,
+          "tint": "#FFC45CFF",
+          "specularColor": "#FFFFFFFF",
+          "lightDirection": [
+            -0.25,
+            0.4,
+            1
+          ],
+          "ambient": 0.1,
+          "tiltX": 0.35,
+          "tiltY": -0.22
+        }
+      }
+    },
+    {
+      "id": "obsidian",
+      "label": "黑曜",
+      "textures": {
+        "normal": {
+          "assetRef": "materials/normal.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        },
+        "noise": {
+          "assetRef": "materials/noise.png",
+          "uvScale": [
+            1,
+            1
+          ],
+          "uvOffset": [
+            0,
+            0
+          ],
+          "rotationDeg": 0,
+          "filter": "linear",
+          "wrap": "clamp-to-edge",
+          "colorSpace": "linear"
+        }
+      },
+      "coverageMask": {
+        "assetRef": "materials/coverage.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "protectMask": {
+        "assetRef": "materials/protect.png",
+        "channel": "r",
+        "invert": false,
+        "uvSpace": "surface"
+      },
+      "uniforms": {
+        "strength": 0.65,
+        "dispersion": 0.48,
+        "specularSharpness": 96,
+        "normalScale": 0.6,
+        "noiseScale": 4,
+        "noiseStrength": 0.15,
+        "roughness": 0.26,
+        "anisotropy": 0.45,
+        "tint": "#A7ABFFFF",
+        "specularColor": "#FFFFFFFF",
+        "lightDirection": [
+          -0.25,
+          0.4,
+          1
+        ],
+        "ambient": 0.025,
+        "tiltX": 0.2,
+        "tiltY": -0.15
+      },
+      "responseCurves": [
+        {
+          "source": "pointer.x",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "pointer.y",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -1,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.rollDeg",
+          "target": "tiltX",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        },
+        {
+          "source": "orientation.pitchDeg",
+          "target": "tiltY",
+          "curve": {
+            "kind": "piecewise-linear",
+            "points": [
+              [
+                -30,
+                -0.8
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                30,
+                0.8
+              ]
+            ],
+            "outside": "clamp"
+          }
+        }
+      ],
+      "staticFallback": {
+        "imageRef": "materials/obsidian-static.png",
+        "fit": "stretch",
+        "maskBakedIn": true,
+        "captureUniforms": {
+          "strength": 0.65,
+          "dispersion": 0.48,
+          "specularSharpness": 96,
+          "normalScale": 0.6,
+          "noiseScale": 4,
+          "noiseStrength": 0.15,
+          "roughness": 0.26,
+          "anisotropy": 0.45,
+          "tint": "#A7ABFFFF",
+          "specularColor": "#FFFFFFFF",
+          "lightDirection": [
+            -0.25,
+            0.4,
+            1
+          ],
+          "ambient": 0.025,
+          "tiltX": 0.35,
+          "tiltY": -0.22
+        }
+      }
+    }
+  ]
+}
