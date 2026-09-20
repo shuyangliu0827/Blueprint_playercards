@@ -1,5 +1,7 @@
 # 蓝本 BLUEPRINT · 个人数字篮球卡 v0
 
+**[直接打开原型](https://blueprint-card-v3-preview.vercel.app)** · **[缩略图评审](https://blueprint-card-v3-preview.vercel.app/debug/thumbnails)**
+
 v3 开发期预览与团队内部评审。第一、二、三批完整实现：照片在浏览器内处理，图像生成是明确标注的本地 Mock。
 
 - Next.js App Router / React / TypeScript，Node.js 24。

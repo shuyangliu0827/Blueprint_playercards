@@ -8,7 +8,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1440, height: 1080 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-await page.goto('http://localhost:3000');
+await page.goto(process.env.TEST_URL??'http://localhost:3000');
 await page.waitForTimeout(2500);
 fs.mkdirSync('docs/screenshots', { recursive: true });
 await page.screenshot({ path: 'docs/screenshots/home-desktop.png', fullPage: true });
