@@ -34,6 +34,13 @@ function ownSession(request: NextRequest): string {
     process.env.DRAW_HMAC_SECRET ?? '',
   );
   if (!id) throw new PreviewError('SESSION_REQUIRED', 'start a signed session first', 401);
+  // A valid signed cookie survives a serverless process restart. Recreate only
+  // the volatile identity so observations and new work remain usable.
+  service().createSession(
+    request.cookies.get(COOKIE)?.value,
+    undefined,
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+  );
   return id;
 }
 function response(value: unknown, status = 200) {

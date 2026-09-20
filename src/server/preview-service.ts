@@ -229,7 +229,8 @@ export class PreviewService {
 
   createSession(cookie: string | undefined, ref: string | undefined, rawIp?: string) {
     this.prune();
-    const anonId = verifyAnonCookie(cookie, this.options.drawSecret) ?? randomUUID();
+    const verifiedIdentity = verifyAnonCookie(cookie, this.options.drawSecret);
+    const anonId = verifiedIdentity ?? randomUUID();
     const ipHash = rawIp
       ? createHmac('sha256', this.options.ipHashSalt).update(rawIp).digest('hex')
       : undefined;
@@ -249,7 +250,7 @@ export class PreviewService {
       successfulCount: existing?.successfulCount ?? 0,
       successTimes: existing?.successTimes ?? [],
     });
-    if (ipHash) this.observeIp(ipHash, anonId, !existing);
+    if (ipHash) this.observeIp(ipHash, anonId, verifiedIdentity === undefined);
     const creator = verifyReferral(ref, this.options.drawSecret);
     if (creator && creator !== anonId && !this.referralVisitors.has(anonId)) {
       this.referralVisitors.set(anonId, this.now());

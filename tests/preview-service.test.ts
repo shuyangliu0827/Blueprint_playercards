@@ -494,3 +494,12 @@ it('accepts actual client validation and manual QA observations while rejecting 
     ]),
   ).toBe(0);
 });
+
+it('restores a verified identity on a fresh process without issuing another anonymous ID', () => {
+  const before = harness();
+  const after = new PreviewService({ configDirectory, drawSecret: secret, ipHashSalt: salt });
+  const recreated = after.createSession(before.cookie, undefined, '1.2.3.4');
+  expect(recreated.value.anonId).toBe(before.session.anonId);
+  expect(recreated.value.remaining).toBe(3);
+  expect(() => after.metrics(before.session.anonId)).not.toThrow();
+});

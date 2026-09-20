@@ -63,6 +63,21 @@ try {
     await (await downloadPromise).saveAs(`docs/screenshots/export-${type}.png`);
     await page.getByRole('button', { name: '关闭导出' }).click();
   }
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(async () => {
+          const r = await fetch('/api/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'metrics' }),
+          });
+          const d = await r.json();
+          return d.events?.filter((e) => e.name === 'share_asset_download_triggered').length ?? -1;
+        }),
+      { timeout: 15000 },
+    )
+    .toBe(4);
   let data = await page.evaluate(async () =>
     fetch('/api/preview', {
       method: 'POST',
@@ -70,6 +85,7 @@ try {
       body: JSON.stringify({ action: 'metrics' }),
     }).then((r) => r.json()),
   );
+  if (!data.events) console.log('METRICS_RESPONSE', data);
   console.log(
     'EVENTS',
     data.events.map((e) => e.name),

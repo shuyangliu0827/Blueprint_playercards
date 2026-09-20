@@ -31,3 +31,5 @@
 - 设计、姿势动作和生成质量仍是原型阶段；没有未决问题阻止使用当前内部预览。
 
 可复现检查：npm run check；npm run build；启动后运行 scripts/e2e.mjs、scripts/render-regressions.mjs、scripts/check-exports.mjs。线上可通过 TEST_URL 指向部署地址重复。
+
+线上复测补充：签名匿名cookie跨进程仍有效；API现在会在新进程重建该匿名身份，避免统计读取因为本地身份缺失而直接报错。此操作不会恢复已丢失的内存事件/次数。导出埋点为异步发送，自动化验收等待服务端实际接收后再检查数量。
