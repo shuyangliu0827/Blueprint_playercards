@@ -20,6 +20,43 @@ export interface DetectedFace {
   readonly confidence: number;
 }
 
+export interface DetectedPerson {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly confidence: number;
+}
+
+let personDetectorPromise: Promise<import('@mediapipe/tasks-vision').ObjectDetector> | undefined;
+
+/** Detect whole people, including backs and profiles. Face visibility is not required. */
+export async function detectPeople(prepared: PreparedPhoto): Promise<DetectedPerson[]> {
+  try {
+    personDetectorPromise ??= (async () => {
+      const { ObjectDetector, FilesetResolver } = await import('@mediapipe/tasks-vision');
+      const vision = await FilesetResolver.forVisionTasks('/wasm');
+      return ObjectDetector.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: '/models/person-detector.tflite', delegate: 'CPU' },
+        runningMode: 'IMAGE',
+        categoryAllowlist: ['person'],
+        scoreThreshold: 0.3,
+        maxResults: 24,
+      });
+    })();
+    const detector = await personDetectorPromise;
+    return detector.detect(prepared.image).detections.flatMap((detection) => {
+      if (!detection.boundingBox) return [];
+      const box = normalizeDetectionBox(detection.boundingBox, prepared.metadata.width, prepared.metadata.height);
+      if (!box) return [];
+      return [{ ...box, confidence: detection.categories[0]?.score ?? 0 }];
+    }).sort((a, b) => b.w * b.h - a.w * a.h);
+  } catch {
+    personDetectorPromise = undefined;
+    throw new Error('人物识别暂时不可用，请重试。');
+  }
+}
+
 export interface FaceKeypoint {
   readonly x: number;
   readonly y: number;

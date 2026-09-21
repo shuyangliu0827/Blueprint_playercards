@@ -52,6 +52,8 @@ interface Job {
   terminalRecorded: boolean;
   restored: boolean;
   errorCode?: string;
+  liveFingerprint?: string;
+  providerReady?: boolean;
 }
 interface Identity {
   anonId: string;
@@ -361,6 +363,31 @@ export class PreviewService {
     return this.view(job);
   }
 
+  reserveLive(anonId: string, requestId: string, input: unknown, fingerprint: string): { job: JobView; created: boolean } {
+    const existing = this.jobs.get(requestId) ?? this.completions.get(requestId)?.job;
+    if (existing) {
+      if (existing.actor !== anonId) throw new PreviewError('REQUEST_OWNERSHIP', 'request belongs to another session', 403);
+      if (existing.liveFingerprint !== fingerprint) throw new PreviewError('REQUEST_MISMATCH', 'requestId is already bound to different input', 409);
+      return { job: this.view(existing), created: false };
+    }
+    this.submit(anonId, { requestId, input, mode: 'normal', scenario: 'success', reason: 'new' });
+    const job = this.owned(anonId, requestId);
+    job.liveFingerprint = fingerprint;
+    job.status = 'pending';
+    return { job: this.view(job), created: true };
+  }
+  providerSucceeded(anonId: string, requestId: string): JobView {
+    const job = this.owned(anonId, requestId);
+    if (!job.liveFingerprint || job.status !== 'pending') throw new PreviewError('NOT_PENDING', 'generation is no longer pending', 409);
+    job.providerReady = true; job.status = 'ready'; job.updatedAt = this.now();
+    return this.view(job);
+  }
+  providerFailed(anonId: string, requestId: string): void {
+    const job = this.owned(anonId, requestId);
+    job.status = 'failed'; job.errorCode = 'GENERATION_FAILED'; job.reserved = false; job.updatedAt = this.now();
+    this.recordTerminal(job);
+  }
+
   poll(anonId: string, requestId: string): JobView {
     this.prune();
     const completed = this.completed(anonId, requestId);
@@ -422,10 +449,12 @@ export class PreviewService {
     const job = this.owned(anonId, requestId);
     this.advance(job);
     if (job.status !== 'failed') return this.view(job);
+    if (job.liveFingerprint && (!job.providerReady || job.errorCode !== 'RENDER_FAILED'))
+      throw new PreviewError('GENERATION_RETRY_REQUIRES_NEW_REQUEST', 'start a new generation explicitly', 409);
     const counts = this.counts(anonId);
     if (counts.successfulCount + this.reserved(anonId) >= 3)
       throw new PreviewError('QUOTA_EXHAUSTED', 'no free successful cards remain', 409);
-    job.status = 'pending';
+    job.status = job.liveFingerprint ? 'ready' : 'pending';
     job.reserved = true;
     job.startedAt = this.now();
     job.stageMs = this.contract.fast;
@@ -517,6 +546,7 @@ export class PreviewService {
         'position',
         'handedness',
         'faceDetection',
+        'subjectDetection',
         'faceProcessingConsent',
         'photoRightsConfirmed',
         'adultSelfDeclaration',
@@ -528,6 +558,7 @@ export class PreviewService {
       if (Object.hasOwn(photo, forbidden))
         throw new PreviewError('IMAGE_UPLOAD_FORBIDDEN', 'image uploads are forbidden');
     exactKeys(top.faceDetection, ['faceCount', 'selectedFaceIndex', 'angle'], 'faceDetection');
+    if (top.subjectDetection !== undefined) exactKeys(top.subjectDetection, ['personCount', 'selectedPersonIndex'], 'subjectDetection');
   }
   private pickOutcome(): Exclude<Scenario, 'random'> {
     const value = this.random();
@@ -568,6 +599,7 @@ export class PreviewService {
     return job;
   }
   private advance(job: Job) {
+    if (job.liveFingerprint) return;
     if (job.status === 'complete' || job.status === 'failed' || job.status === 'ready') return;
     const elapsed = this.now() - job.startedAt;
     if (job.outcome === 'success' && elapsed >= job.stageMs) job.status = 'ready';

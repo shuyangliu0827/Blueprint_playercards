@@ -1,5 +1,7 @@
 # Photo and mock-generator decisions
 
+> Superseded for the current Studio on 2026-09-21: whole-person detection and original-photo composition replace the face-only/MockGenerator path. See [person-subject-update.md](person-subject-update.md). Legacy classes remain available but Studio no longer calls them.
+
 - Photo decoding is browser-only. HEIC/HEIF uses the bundled `heic2any`; JPEG and PNG use the browser decoder, including its EXIF-orientation handling.
 - Metadata records the original MIME type, byte size, and orientation-correct decoded dimensions. The original decoded image remains available for artwork. Face detection alone uses a temporary canvas whose longest edge is at most 2048 pixels.
 - Photo size, accepted canonical MIME types, and the 1024px short-edge warning threshold come from the validated input configuration. HEIF files are locally decoded as the supported HEIC family and expose canonical `image/heic` metadata.

@@ -22,13 +22,20 @@ import { loadImage, isWeChat, downloadBlob } from '../platform/web';
 import { api, ApiError } from '../platform/api';
 import {
   decodePhoto,
-  detectFaces,
+  detectPeople,
   releasePhoto,
   type PreparedPhoto,
-  type DetectedFace,
+  type DetectedPerson,
 } from '../platform/photo';
-import { MockGenerator, ManualArtworkEvaluator } from '../generator';
-import CardView from './CardView';
+import { renderMvpCard, type CardSeries } from '../render/mvp-card';
+import CardView from './MvpCardView';
+import {
+  generationStatus,
+  generationPayload,
+  requestArtwork,
+  type ArtworkResult,
+  type GenerationStatus,
+} from '../platform/generation';
 const layout = layoutJson as Layout,
   effect = effectJson as Effect,
   inputConfig = validateInputConfig(inputJson),
@@ -55,6 +62,7 @@ type Result = {
   data: CardData;
   tier: Tier;
   requestId: string;
+  series: CardSeries;
 };
 const issueText: Record<string, string> = {
   NICKNAME_REQUIRED: '给自己起一个卡面昵称。',
@@ -64,7 +72,9 @@ const issueText: Record<string, string> = {
   JERSEY_NUMBER_INVALID: '球衣号码需要 1–2 位数字。',
   POSITION_REQUIRED: '选择你的场上位置。',
   HANDEDNESS_REQUIRED: '选择你的惯用手。',
-  FACE_CONSENT_REQUIRED: '需要单独同意本地人脸处理后继续。',
+  FACE_CONSENT_REQUIRED: '需要同意人物识别及照片生成处理后继续。',
+  PERSON_NOT_DETECTED: '还没找到人物，请换一张人物更清楚的照片。',
+  SUBJECT_RESULT_INVALID: '人物识别结果无效，请重新选择照片。',
   PHOTO_RIGHTS_REQUIRED: '请确认这张照片可供你使用。',
   ADULT_DECLARATION_REQUIRED: '当前内部预览仅面向年满 18 岁的本人。',
   SUBJECT_SELECTION_REQUIRED: '请先在照片中选择你自己。',
@@ -75,7 +85,7 @@ export default function Studio() {
     [session, setSession] = useState<Session | null>(null),
     [error, setError] = useState(''),
     [photo, setPhoto] = useState<PreparedPhoto | null>(null),
-    [faces, setFaces] = useState<DetectedFace[]>([]),
+    [subjects, setSubjects] = useState<DetectedPerson[]>([]),
     [selected, setSelected] = useState<number | null>(null),
     [busy, setBusy] = useState(false),
     [consent, setConsent] = useState(false),
@@ -85,12 +95,14 @@ export default function Studio() {
     [number, setNumber] = useState(''),
     [position, setPosition] = useState<Position | ''>(''),
     [hand, setHand] = useState<Handedness | ''>(''),
-    [mode, setMode] = useState<'normal' | 'fast'>('normal'),
-    [scenario, setScenario] = useState<'random' | 'success' | 'retry' | 'fail'>('random'),
+    [series, setSeries] = useState<CardSeries>('classic'),
+    [references, setReferences] = useState<PreparedPhoto[]>([]),
+    [provider, setProvider] = useState<GenerationStatus | null>(null),
+    [providerError, setProviderError] = useState(''),
     [job, setJob] = useState<JobView | null>(null),
     [result, setResult] = useState<Result | null>(null),
     [selectedTier, setSelectedTier] = useState<Tier>('prism'),
-    [exampleFront, setExampleFront] = useState('/assets/examples/card-2.png'),
+    [exampleFront, setExampleFront] = useState('/assets/mvp/aura.png'),
     [exampleBack, setExampleBack] = useState(''),
     [asset, setAsset] = useState<{ url: string; blob: Blob; type: AssetType } | null>(null),
     [assetBusy, setAssetBusy] = useState(false),
@@ -98,8 +110,18 @@ export default function Studio() {
     [debug, setDebug] = useState(false),
     [metrics, setMetrics] = useState<unknown>(null);
   const fileRef = useRef<HTMLInputElement>(null),
+    referenceRef = useRef<HTMLInputElement>(null),
+    referencesRef = useRef<PreparedPhoto[]>([]),
+    referenceVersion = useRef(0),
+    requestForm = useRef<FormData | null>(null),
+    generated = useRef<ArtworkResult | null>(null),
+    savedSeries = useRef<CardSeries>('classic'),
+    requestFingerprint = useRef(''),
     savedInput = useRef<CardInput | null>(null),
     photoRef = useRef<PreparedPhoto | null>(null),
+    scanVersion = useRef(0),
+    photoVersion = useRef(0),
+    consentRef = useRef(false),
     runLock = useRef(false),
     sessionPromise = useRef<Promise<Session> | null>(null),
     pendingRequest = useRef<string | null>(null),
@@ -123,8 +145,15 @@ export default function Studio() {
     return promise;
   }
   useEffect(() => {
+    void generationStatus()
+      .then(setProvider)
+      .catch((e) => setProviderError(e.message));
     void initialize().catch(() => setError('预览服务暂时未连接，点「做我的篮球卡」时会重试。'));
     return () => {
+      scanVersion.current++;
+      photoVersion.current++;
+      referenceVersion.current++;
+      referencesRef.current.forEach(releasePhoto);
       if (photoRef.current) releasePhoto(photoRef.current);
     };
   }, []);
@@ -139,10 +168,10 @@ export default function Studio() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const art = await loadImage('/assets/examples/art-2.jpg');
+      const art = await loadImage('/assets/mvp/demo-photo.jpg');
       const data: CardData = {
-        nickname: '林一',
-        jerseyNumber: '07',
+        nickname: '球员姓名',
+        jerseyNumber: '09',
         position: '控球后卫',
         handedness: '右手',
         cardId: 'EXAMPLE · DESIGN PREVIEW',
@@ -152,7 +181,12 @@ export default function Studio() {
         seriesName: 'BLUEPRINT',
         issuedAt: '',
       };
-      const front = await renderCard(layout, effect, data, art, selectedTier, 'front', false),
+      const front = await renderMvpCard({
+          artwork: art,
+          data,
+          series: 'classic',
+          tier: selectedTier,
+        }),
         back = await renderCard(layout, effect, data, art, selectedTier, 'back', false);
       if (active) {
         setExampleFront(front.toDataURL());
@@ -198,236 +232,292 @@ export default function Studio() {
   }
   async function chooseFile(file: File | undefined) {
     if (!file) return;
+    const version = ++photoVersion.current;
+    scanVersion.current++;
     setBusy(true);
     setError('');
-    setFaces([]);
+    setSubjects([]);
     setSelected(null);
     try {
       const p = await decodePhoto(file);
+      if (version !== photoVersion.current) {
+        releasePhoto(p);
+        return;
+      }
       if (photoRef.current) releasePhoto(photoRef.current);
       photoRef.current = p;
       setPhoto(p);
-      if (consent) await scan(p);
+      if (consentRef.current) await scan(p);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '照片读取失败');
+      if (version === photoVersion.current)
+        setError(e instanceof Error ? e.message : '照片读取失败');
     } finally {
-      setBusy(false);
+      if (version === photoVersion.current) setBusy(false);
     }
   }
   async function scan(p: PreparedPhoto) {
+    if (!consentRef.current) return;
+    const version = ++scanVersion.current;
     setBusy(true);
+    setSubjects([]);
+    setSelected(null);
     try {
-      const f = await detectFaces(p);
-      setFaces(f);
+      const f = await detectPeople(p);
+      if (version !== scanVersion.current) return;
+      setSubjects(f);
       setSelected(f.length === 1 ? 0 : null);
-      if (!f.length) setError('还没找到人脸。换一张能看到脸部的照片再试试。');
+      if (!f.length) setError('还没找到人物，请换一张人物轮廓更清楚的照片。背身、侧身都可以。');
       else setError('');
     } catch {
-      setError('本地人脸识别未能加载，请重试或换一个浏览器。');
+      if (version !== scanVersion.current) return;
+      setError('本地人物识别未能加载，请点击重试识别。');
     } finally {
-      setBusy(false);
+      if (version === scanVersion.current) setBusy(false);
     }
   }
-  async function setFaceConsent(checked: boolean) {
+  async function setSubjectConsent(checked: boolean) {
+    consentRef.current = checked;
     setConsent(checked);
     if (checked && photo) await scan(photo);
     if (!checked) {
-      setFaces([]);
+      scanVersion.current++;
+      setBusy(false);
+      setSubjects([]);
       setSelected(null);
     }
   }
-  async function prepareResult(j: JobView) {
-    if (!photo || selected === null || !faces[selected] || !savedInput.current)
-      throw new Error('照片只保留在当前页面，请重新选择照片。');
-    const i = savedInput.current;
-    const art = await new MockGenerator().generate(
-      { photo, face: faces[selected]! },
-      layout.templateVersion,
-      j.poseId,
-      j.mirror,
-      j.draw,
-    );
-    await new ManualArtworkEvaluator().evaluate(art);
-    const tier = j.draw.tier as Tier;
-    const data: CardData = {
-      nickname: i.nickname,
-      jerseyNumber: i.jerseyNumber,
-      position: positions[i.position],
-      handedness: i.handedness === 'LEFT' ? '左手' : '右手',
-      cardId: j.draw.cardId,
-      aiLabel: 'AI 辅助合成 / 开发预览',
-      tierName: effect.materials.find((m) => m.id === tier)!.label,
-      story: buildStory(
-        {
-          nickname: i.nickname,
-          jerseyNumber: i.jerseyNumber,
-          position: i.position,
-          templateIndex: 0,
-        },
-        stories,
-      ),
-      seriesName: 'BLUEPRINT',
-      issuedAt: new Date().toISOString(),
-    };
-    const front = await renderCard(layout, effect, data, art.canvas, tier, 'front', false),
-      back = await renderCard(layout, effect, data, art.canvas, tier, 'back', false),
-      card = await renderCard(layout, effect, data, art.canvas, tier, 'front', true);
+  async function addReferences(files: FileList | null) {
+    if (!files?.length || busy) return;
+    const remaining = 2 - referencesRef.current.length;
+    if (files.length > remaining) {
+      setError('最多上传 3 张照片：1 张主照片和 2 张参考照片。');
+      return;
+    }
+    const version = ++referenceVersion.current;
+    setBusy(true);
+    const decoded: PreparedPhoto[] = [];
+    try {
+      for (const file of Array.from(files)) decoded.push(await decodePhoto(file));
+      if (version !== referenceVersion.current) {
+        decoded.forEach(releasePhoto);
+        return;
+      }
+      referencesRef.current = [...referencesRef.current, ...decoded];
+      setReferences(referencesRef.current);
+      setError('');
+    } catch (e) {
+      decoded.forEach(releasePhoto);
+      setError(e instanceof Error ? e.message : '参考照片读取失败');
+    } finally {
+      if (version === referenceVersion.current) setBusy(false);
+      if (referenceRef.current) referenceRef.current.value = '';
+    }
+  }
+  function removeReference(index: number) {
+    const removed = referencesRef.current[index];
+    if (removed) releasePhoto(removed);
+    referencesRef.current = referencesRef.current.filter((_, i) => i !== index);
+    setReferences(referencesRef.current);
+  }
+  async function prepareResult(payload: ArtworkResult) {
+    const j = payload.job;
+    let prepared: Result;
+    try {
+      if (!savedInput.current) throw new Error('请重新填写卡面信息。');
+      const i = savedInput.current;
+      const art = await loadImage(payload.artwork);
+      const tier = j.draw.tier as Tier;
+      const data: CardData = {
+        nickname: i.nickname,
+        jerseyNumber: i.jerseyNumber,
+        position: positions[i.position],
+        handedness: i.handedness === 'LEFT' ? '左手' : '右手',
+        cardId: j.draw.cardId,
+        aiLabel: 'AI 艺术生成 · BLUEPRINT',
+        tierName: effect.materials.find((m) => m.id === tier)!.label,
+        story: buildStory(
+          {
+            nickname: i.nickname,
+            jerseyNumber: i.jerseyNumber,
+            position: i.position,
+            templateIndex: 0,
+          },
+          stories,
+        ),
+        seriesName:
+          savedSeries.current === 'classic' ? 'BLUEPRINT' : savedSeries.current.toUpperCase(),
+        issuedAt: new Date().toISOString(),
+      };
+      const front = await renderMvpCard({ artwork: art, data, series: savedSeries.current, tier });
+      const back = await renderCard(layout, effect, data, art, tier, 'back', false);
+      const card = await renderMvpCard({
+        artwork: art,
+        data,
+        series: savedSeries.current,
+        tier,
+        includeMaterial: true,
+      });
+      // Serialization can fail independently of drawing. Finish all local work before charging quota.
+      prepared = {
+        front: front.toDataURL(),
+        back: back.toDataURL(),
+        card,
+        data,
+        tier,
+        series: savedSeries.current,
+        requestId: j.requestId,
+      };
+    } catch (error) {
+      if (j.status !== 'complete') {
+        const failed = await api<JobView>({ action: 'render-failed', requestId: j.requestId });
+        generated.current = { ...payload, job: failed };
+        setJob(failed);
+        setSession((s) =>
+          s ? { ...s, remaining: failed.remaining, successfulCount: failed.successfulCount } : s,
+        );
+      }
+      throw error;
+    }
+    // Keep completion outside the local-render catch: a lost response may already have committed.
     const complete =
       j.status === 'complete'
         ? j
         : await api<JobView>({ action: 'complete', requestId: j.requestId });
+    generated.current = { ...payload, job: complete };
     setJob(complete);
     setSession((s) =>
       s ? { ...s, remaining: complete.remaining, successfulCount: complete.successfulCount } : s,
     );
-    setResult({
-      front: front.toDataURL(),
-      back: back.toDataURL(),
-      card,
-      data,
-      tier,
-      requestId: j.requestId,
-    });
+    setResult(prepared);
     setStep('result');
   }
-  async function run(j: JobView) {
-    if (runLock.current) return;
+  async function runGeneration() {
+    if (runLock.current || !requestForm.current) return;
     runLock.current = true;
     requestStart.current = Date.now();
     setElapsed(0);
     setStep('processing');
     setError('');
-    setJob(j);
     try {
-      let current = j,
-        expiredRestarts = 0;
-      while (current.status === 'pending' || current.status === 'retrying') {
-        await new Promise((r) => setTimeout(r, mode === 'fast' ? 250 : 1000));
+      let payload = generated.current;
+      if (payload) {
+        // Reconcile lost failure/completion responses before touching the cached artwork.
+        let latest: JobView;
         try {
-          current = await api<JobView>({ action: 'poll', requestId: j.requestId });
-        } catch (e) {
-          if (
-            e instanceof ApiError &&
-            e.code === 'TASK_EXPIRED' &&
-            savedInput.current &&
-            expiredRestarts++ < 3
-          )
-            current = await api<JobView>({
-              action: 'submit',
-              requestId: j.requestId,
-              input: savedInput.current,
-              mode,
-              scenario,
-              reason: 'initial',
-            });
-          else throw e;
+          latest = await api<JobView>({ action: 'poll', requestId: payload.job.requestId });
+        } catch (error) {
+          if (error instanceof ApiError && error.code === 'TASK_EXPIRED')
+            throw new Error(
+              '本次任务已过期，请返回修改信息并重新制作。缓存画面不会自动触发新的付费生成。',
+            );
+          throw error;
         }
-        setJob(current);
-      }
-      if (current.status === 'failed') {
+        payload = { ...payload, job: latest };
+        generated.current = payload;
+        setJob(latest);
         setSession((s) =>
-          s ? { ...s, remaining: current.remaining, successfulCount: current.successfulCount } : s,
+          s ? { ...s, remaining: latest.remaining, successfulCount: latest.successfulCount } : s,
         );
-        setError('这次画面没有完成，次数已返还。恢复会保留本次材质。');
-        return;
+      } else {
+        payload = await requestArtwork(requestForm.current);
       }
-      await prepareResult(current);
+      if (payload.job.status === 'failed') {
+        if (payload.job.error !== 'RENDER_FAILED')
+          throw new Error('本次任务已失效，请返回修改信息并重新制作。不会自动重复付费请求。');
+        const restored = await api<JobView>({
+          action: 'restore',
+          requestId: payload.job.requestId,
+        });
+        payload = { ...payload, job: restored };
+        setSession((s) =>
+          s
+            ? { ...s, remaining: restored.remaining, successfulCount: restored.successfulCount }
+            : s,
+        );
+      }
+      generated.current = payload;
+      setJob(payload.job);
+      await prepareResult(payload);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '生成暂时中断，请恢复本次任务。');
-      try {
-        const failed = await api<JobView>({ action: 'render-failed', requestId: j.requestId });
-        setJob(failed);
-        setSession((s) => (s ? { ...s, remaining: failed.remaining } : s));
-      } catch {}
+      setError(e instanceof Error ? e.message : '生成中断，请查询本次结果。');
     } finally {
       runLock.current = false;
     }
   }
   async function submit() {
-    if (busy || !session) return;
+    if (busy || runLock.current || !session) return;
     setError('');
     if (!photo) {
-      setError('先选一张自己的照片。');
+      setError('先选一张自己的主照片。');
       return;
     }
-    const i: unknown = {
-      photo: photo.metadata,
-      nickname,
-      jerseyNumber: number,
-      position,
-      handedness: hand,
-      faceDetection: {
-        faceCount: faces.length,
-        ...(selected === null ? {} : { selectedFaceIndex: selected }),
-        angle: selected === null ? 'UNCERTAIN' : (faces[selected]?.angle ?? 'UNCERTAIN'),
+    const checked = validateCardInput(
+      {
+        photo: photo.metadata,
+        nickname,
+        jerseyNumber: number,
+        position,
+        handedness: hand,
+        faceDetection: { faceCount: 0, angle: 'UNCERTAIN' },
+        subjectDetection: {
+          personCount: subjects.length,
+          ...(selected === null ? {} : { selectedPersonIndex: selected }),
+        },
+        faceProcessingConsent: consent,
+        photoRightsConfirmed: rights,
+        adultSelfDeclaration: adult,
       },
-      faceProcessingConsent: consent,
-      photoRightsConfirmed: rights,
-      adultSelfDeclaration: adult,
-    };
-    const checked = validateCardInput(i, inputConfig, names);
-    if (!checked.ok || !checked.value) {
-      const first = checked.errors[0]!;
-      setError(issueText[first.code] ?? '请完成照片识别和所有信息。');
-      void track('input_rejected', { rejectionCode: first.code });
+      inputConfig,
+      names,
+    );
+    if (!checked.ok || !checked.value || selected === null || !subjects[selected]) {
+      const code = checked.errors[0]?.code;
+      setError(code ? (issueText[code] ?? '请完成照片识别和所有信息。') : '请选择照片中的自己。');
       return;
     }
-    if (
-      pendingRequest.current &&
-      savedInput.current &&
-      JSON.stringify(savedInput.current) !== JSON.stringify(checked.value)
-    )
-      pendingRequest.current = null;
-    savedInput.current = checked.value;
     setBusy(true);
     try {
-      const requestId =
-        pendingRequest.current ??
-        `${crypto.randomUUID()}:${session.successfulCount === 0 ? '1' : '0'}:${session.configVersion}`;
-      pendingRequest.current = requestId;
-      const j = await api<JobView>({
-        action: 'submit',
-        requestId,
-        input: checked.value,
-        mode,
-        scenario,
-        reason: session.successfulCount === 0 ? 'initial' : 'new',
-      });
-      await run(j);
+      const status = await generationStatus();
+      setProvider(status);
+      setProviderError('');
+      if (!status.configured)
+        throw new Error('图像服务尚未配置。请在服务器本地配置 OpenAI API 密钥后再制作。');
+      const fingerprint = JSON.stringify([
+        checked.value,
+        series,
+        subjects[selected],
+        photo.objectUrl,
+        references.map((p) => p.objectUrl),
+      ]);
+      if (fingerprint !== requestFingerprint.current || !pendingRequest.current) {
+        pendingRequest.current = `${crypto.randomUUID()}:${session.successfulCount === 0 ? '1' : '0'}:${session.configVersion}`;
+        requestForm.current = await generationPayload(
+          pendingRequest.current,
+          checked.value,
+          series,
+          subjects[selected],
+          [photo, ...references],
+        );
+        generated.current = null;
+        requestFingerprint.current = fingerprint;
+      }
+      savedInput.current = checked.value;
+      savedSeries.current = series;
+      await runGeneration();
     } catch (e) {
       setError(
         e instanceof ApiError && e.code === 'QUOTA_EXHAUSTED'
-          ? '本轮 3 张免费卡已制作完成。'
+          ? '本轮 3 张卡已制作完成。'
           : e instanceof Error
             ? e.message
-            : '提交失败，请再试一次。',
+            : '提交失败，请重试。',
       );
     } finally {
       setBusy(false);
     }
   }
   async function restore() {
-    if (!job || runLock.current) return;
-    try {
-      let j: JobView;
-      try {
-        j = await api<JobView>({ action: 'restore', requestId: job.requestId });
-      } catch (e) {
-        if (e instanceof ApiError && e.code === 'TASK_EXPIRED' && savedInput.current)
-          j = await api<JobView>({
-            action: 'submit',
-            requestId: job.requestId,
-            input: savedInput.current,
-            mode,
-            scenario: 'success',
-            reason: 'initial',
-          });
-        else throw e;
-      }
-      await run(j);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '恢复失败');
-    }
+    await runGeneration();
   }
   async function share(type: AssetType) {
     if (!result || !session || assetBusy) return;
@@ -445,7 +535,7 @@ export default function Studio() {
         result.data.nickname,
         url.href,
         layout.canvas.dpi,
-        layout.templateVersion,
+        'blueprint-mvp-v2',
       );
       if (asset) URL.revokeObjectURL(asset.url);
       setAsset({ url: URL.createObjectURL(composed.blob), blob: composed.blob, type });
@@ -467,6 +557,8 @@ export default function Studio() {
   }
   function newCard() {
     pendingRequest.current = null;
+    requestForm.current = null;
+    generated.current = null;
     setJob(null);
     setError('');
     setStep('input');
@@ -488,7 +580,11 @@ export default function Studio() {
     <>
       <header className="site-header">
         <a href="/" className="wordmark">
-          <b>B.</b>
+          <img
+            src="/assets/brand/blueprint-logo.png"
+            alt="蓝本 Blueprint"
+            style={{ width: 100, height: 50, objectFit: 'contain' }}
+          />
           <span>
             蓝本<small>BLUEPRINT</small>
           </span>
@@ -500,7 +596,7 @@ export default function Studio() {
         </nav>
         <span className="preview-badge">
           <i />
-          内部设计预览
+          BLUEPRINT · MVP
         </span>
       </header>
       <main>
@@ -534,22 +630,22 @@ export default function Studio() {
                 </div>
                 <img
                   className="sample sample-left"
-                  src="/assets/examples/card-1.png"
-                  alt="林一的银折示例篮球卡"
+                  src="/assets/mvp/silver.png"
+                  alt="银折卡设计样张"
                 />
                 <img
                   className="sample sample-right"
-                  src="/assets/examples/card-3.png"
-                  alt="小野的金箔示例篮球卡"
+                  src="/assets/mvp/animation.png"
+                  alt="ANIMATION 设计样张"
                 />
                 <img
                   className="sample sample-center"
-                  src="/assets/examples/card-2.png"
-                  alt="阿澈的棱镜示例篮球卡"
+                  src="/assets/mvp/aura.png"
+                  alt="AURA 设计样张"
                 />
                 <div className="gallery-caption">
                   <span>01 / 03</span>
-                  <span>初版示例 · AI 合成画面</span>
+                  <span>系列设计样张 · 非用户生成结果</span>
                   <span>↙ 看见你的另一面</span>
                 </div>
               </div>
@@ -558,7 +654,7 @@ export default function Studio() {
               <div className="section-kicker">从照片，到你的主场</div>
               <div className="how-grid">
                 {[
-                  ['01', '一张你自己的照片', '清晰看到脸部就好，球场内外都可以。'],
+                  ['01', '上传 1–3 张自己的照片', '主照片确定动作，参考照片补充你的个人特征。'],
                   ['02', '一点属于你的信息', '昵称、号码、位置和惯用手。'],
                   ['03', '揭晓你的第一张卡', '看看反光、翻到背面，再把它分享出去。'],
                 ].map(([n, t, d]) => (
@@ -632,9 +728,9 @@ export default function Studio() {
                     <br />
                     今天的<span>主角。</span>
                   </h1>
-                  <p className="muted">不用准备标准照。能看见你的脸，就能开始。</p>
+                  <p className="muted">背身、侧身、腾空动作都可以。照片中能看到你，就能开始。</p>
                   <div className="field">
-                    <label>01 / 你的照片</label>
+                    <label>01 / 你的主照片</label>
                     <input
                       ref={fileRef}
                       type="file"
@@ -655,7 +751,7 @@ export default function Studio() {
                       ) : (
                         <>
                           <b>＋</b>
-                          <strong>选择一张自己的照片</strong>
+                          <strong>选择主照片</strong>
                           <span>JPG / PNG / HEIC · 不超过 10 MB</span>
                         </>
                       )}
@@ -666,15 +762,20 @@ export default function Studio() {
                     {consent && photo && (
                       <small>
                         {busy
-                          ? '正在本机识别人脸…'
-                          : faces.length
-                            ? `识别到 ${faces.length} 张脸${faces.length === 1 ? '，已选为主体。' : '，请选择你自己。'}`
-                            : '等待识别人脸'}
+                          ? '正在本机识别人物…'
+                          : subjects.length
+                            ? `识别到 ${subjects.length} 位人物${subjects.length === 1 ? '，已选为主体。' : '，请选择你自己。'}`
+                            : '暂未找到人物'}
                       </small>
                     )}
-                    {faces.length > 1 && (
+                    {consent && photo && !busy && (
+                      <button type="button" onClick={() => void scan(photo)}>
+                        重试识别
+                      </button>
+                    )}
+                    {subjects.length > 0 && (
                       <div className="face-options">
-                        {faces.map((face, i) => (
+                        {subjects.map((face, i) => (
                           <button
                             key={i}
                             className={selected === i ? 'chosen' : ''}
@@ -683,9 +784,18 @@ export default function Studio() {
                             <span
                               className="face-crop"
                               style={{
+                                width: 72,
+                                height: Math.max(
+                                  45,
+                                  Math.min(
+                                    150,
+                                    (72 * face.h * (photo?.metadata.height ?? 1)) /
+                                      (face.w * (photo?.metadata.width ?? 1)),
+                                  ),
+                                ),
                                 backgroundImage: `url(${photo?.objectUrl})`,
                                 backgroundSize: `${100 / face.w}% ${100 / face.h}%`,
-                                backgroundPosition: `${(face.x / (1 - face.w)) * 100}% ${(face.y / (1 - face.h)) * 100}%`,
+                                backgroundPosition: `${(face.x / Math.max(0.001, 1 - face.w)) * 100}% ${(face.y / Math.max(0.001, 1 - face.h)) * 100}%`,
                               }}
                             />
                             第 {i + 1} 位{selected === i ? ' ✓' : ''}
@@ -693,6 +803,44 @@ export default function Studio() {
                         ))}
                       </div>
                     )}
+                  </div>
+                  <div className="field">
+                    <label>参考照片 · 可选，最多再添加 2 张</label>
+                    <small>
+                      上传同一个人的清晰照片，辅助保留外貌、发型和服装特征。主照片决定动作。
+                    </small>
+                    <input
+                      ref={referenceRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/heic,.heic,.heif"
+                      multiple
+                      hidden
+                      onChange={(e) => void addReferences(e.target.files)}
+                    />
+                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                      {references.map((p, i) => (
+                        <div key={p.objectUrl} style={{ width: 100 }}>
+                          <img
+                            src={p.objectUrl}
+                            alt={`参考照片 ${i + 1}`}
+                            style={{ width: 100, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                          />
+                          <button type="button" disabled={busy} onClick={() => removeReference(i)}>
+                            移除参考 {i + 1}
+                          </button>
+                        </div>
+                      ))}
+                      {references.length < 2 && (
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={busy}
+                          onClick={() => referenceRef.current?.click()}
+                        >
+                          ＋ 添加参考
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="fields-grid">
                     <div className="field">
@@ -749,6 +897,28 @@ export default function Studio() {
                       </button>
                     </div>
                   </div>
+                  <div className="field">
+                    <label>选择卡片系列</label>
+                    <div className="position-options">
+                      {(
+                        [
+                          ['classic', 'ORIGINAL', '真实运动摄影'],
+                          ['aura', 'AURA', '艺术人物 · 虚拟意境'],
+                          ['animation', 'ANIMATION', '美漫人物 · 异想球场'],
+                        ] as const
+                      ).map(([id, name, text]) => (
+                        <button
+                          key={id}
+                          className={series === id ? 'chosen' : ''}
+                          onClick={() => setSeries(id)}
+                        >
+                          <b>{name}</b>
+                          <span>{text}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <small>版式保持一致，人物和场景根据你的照片及信息重新生成。</small>
+                  </div>
                   <div className="consents">
                     <label>
                       <input
@@ -756,7 +926,7 @@ export default function Studio() {
                         checked={rights}
                         onChange={(e) => setRights(e.target.checked)}
                       />
-                      我确认照片为本人，且有权使用。
+                      我确认全部照片中的主体为本人，且有权使用。
                     </label>
                     <label>
                       <input
@@ -770,13 +940,14 @@ export default function Studio() {
                       <input
                         type="checkbox"
                         checked={consent}
-                        onChange={(e) => void setFaceConsent(e.target.checked)}
+                        onChange={(e) => void setSubjectConsent(e.target.checked)}
                       />
-                      我单独同意在本机检测、裁剪我的人脸，用于这张篮球卡。
+                      我同意在本机识别人物，并将所选照片及卡片信息发送至 OpenAI 生成卡面。
                     </label>
                   </div>
                   <p className="privacy-note">
-                    照片和成品仅在当前浏览器处理。关闭或刷新页面后，请重新选择照片。
+                    人物识别在本机完成；点击制作后，所选照片会通过服务器发送至
+                    OpenAI。请及时保存成品，刷新页面会清除当前浏览器中的制作内容。
                   </p>
                   <button
                     className="primary full"
@@ -790,37 +961,26 @@ export default function Studio() {
                         : '制作我的篮球卡'}
                     <span>↗</span>
                   </button>
-                  <details className="review-settings">
-                    <summary>内部评审设置</summary>
-                    <label>
-                      生成速度
-                      <select value={mode} onChange={(e) => setMode(e.target.value as typeof mode)}>
-                        <option value="normal">正常模拟（中位约 12 秒）</option>
-                        <option value="fast">快速预览（0.5 秒）</option>
-                      </select>
-                    </label>
-                    <label>
-                      生成结果
-                      <select
-                        value={scenario}
-                        onChange={(e) => setScenario(e.target.value as typeof scenario)}
-                      >
-                        <option value="random">随机模拟（15% 失败路径）</option>
-                        <option value="success">直接完成</option>
-                        <option value="retry">失败一次后自动恢复</option>
-                        <option value="fail">失败并返还次数</option>
-                      </select>
-                    </label>
-                  </details>
+                  <p className="privacy-note" role="status">
+                    {providerError ||
+                      (provider === null
+                        ? '正在检查图像服务…'
+                        : provider.configured
+                          ? 'OpenAI 图像服务已配置。生成可能需要几分钟。'
+                          : '图像服务尚未配置，暂时无法生成。')}
+                  </p>
                 </div>
                 <aside className="editor-preview">
                   <div className="eyebrow">YOUR FIRST EDITION</div>
-                  <img src="/assets/examples/card-2.png" alt="设计示例卡" />
-                  <p>这张示例，下一张是你。</p>
+                  <img
+                    src={`/assets/mvp/${series === 'classic' ? 'silver' : series}.png`}
+                    alt={`${series.toUpperCase()} 系列设计样张`}
+                  />
+                  <p>这是系列设计样张，成品将根据你的照片重新生成。</p>
                   <small>
-                    当前用本地合成画面验证流程，
+                    固定 Logo、边框和姓名区，
                     <br />
-                    尚未接入真实图像生成。
+                    每张卡拥有自己的画面。
                   </small>
                 </aside>
               </div>
@@ -832,27 +992,19 @@ export default function Studio() {
                   <div className="orbit" />
                 </div>
                 <div className="eyebrow">YOUR MOMENT IS TAKING SHAPE.</div>
-                <h1>
-                  {job?.status === 'failed'
-                    ? '这一回合，稍作调整。'
-                    : job?.status === 'retrying'
-                      ? '再打磨一次。'
-                      : '把这一刻，制成你的卡。'}
-                </h1>
+                <h1>{error ? '这一回合，稍作调整。' : '把这一刻，制成你的卡。'}</h1>
                 <p>
-                  {job?.status === 'failed'
-                    ? '本次抽到的材质已保留，恢复时不会重新抽取。'
-                    : job?.status === 'retrying'
-                      ? '正在用同一张卡的材质自动重试，不额外扣次数。'
-                      : '画面在你的浏览器内合成。稍等，马上揭晓。'}
+                  {generated.current
+                    ? '画面已完成，正在排版并制作折射材质。'
+                    : 'OpenAI 正在根据你的照片绘制人物和场景，可能需要几分钟。'}
                 </p>
                 <span className="elapsed">
-                  {elapsed} 秒 · {job?.attempt && job.attempt > 1 ? '已自动重试 1 次' : '正在制作'}
+                  {elapsed} 秒 · {savedSeries.current.toUpperCase()}
                 </span>
                 {(job?.status === 'failed' || error) && (
                   <div className="recovery">
                     <button className="primary" onClick={() => void restore()}>
-                      恢复这张卡 ↗
+                      查询本次结果 ↗
                     </button>
                     <button className="secondary" onClick={newCard}>
                       换一张重新制作
@@ -864,7 +1016,12 @@ export default function Studio() {
             {step === 'result' && result && (
               <div className="result-layout">
                 <div className="result-card">
-                  <CardView front={result.front} back={result.back} tier={result.tier} />
+                  <CardView
+                    front={result.front}
+                    back={result.back}
+                    tier={result.tier}
+                    series={result.series}
+                  />
                 </div>
                 <div className="result-copy">
                   <div className="eyebrow">THIS ONE IS YOURS.</div>
@@ -874,7 +1031,7 @@ export default function Studio() {
                   </h1>
                   <div className="result-tag">
                     <i className={`swatch ${result.tier}`} />
-                    {result.data.tierName} <span>·</span> BLUEPRINT ORIGINALS
+                    {result.data.tierName} <span>·</span> {result.data.seriesName}
                   </div>
                   <p>
                     翻到背面，看看属于你的那段话。
@@ -925,7 +1082,7 @@ export default function Studio() {
                   </button>
                   <details className="review-settings">
                     <summary>人工抽检记录（评审用）</summary>
-                    <p>记录人工观察，不把合成桩当作真实模型质量。</p>
+                    <p>记录人物、动作及艺术风格的实际生成质量。</p>
                     <button
                       className="text-button"
                       onClick={() => {
@@ -972,7 +1129,7 @@ export default function Studio() {
         <section className="debug-panel">
           <h3>开发期预览</h3>
           <p>
-            本地合成桩、设计参数初版；不代表真实生成质量或可商用成品。3
+            OpenAI 生成卡面，固定模板排版并叠加动态折射。3
             次免费额度与事件仅存进程内存，服务重启后可能重置。保存指标是「图片已呈现」的上界，实际保存不可确认；传播以服务端观察到的去重回流为主。
           </p>
           <pre>{JSON.stringify(metrics, null, 2)}</pre>

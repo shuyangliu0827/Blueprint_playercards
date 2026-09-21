@@ -25,8 +25,8 @@ export function addPngMetadata(bytes: Uint8Array, dpi: number, templateVersion: 
   dv.setUint32(4, Math.round(dpi / 0.0254));
   phys[8] = 1;
   const meta = {
-    label: 'AI-assisted synthetic preview',
-    generator: 'MockGenerator',
+    label: 'Local card layout preview',
+    generator: 'BlueprintCardRenderer',
     templateVersion,
     notice: 'Internal development preview; not real image generation or certification',
   };

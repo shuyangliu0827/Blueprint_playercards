@@ -1,0 +1,70 @@
+.wrapper {
+  width: 100%;
+  min-width: 0;
+}
+.surface {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  isolation: isolate;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0a0e16;
+  box-shadow:
+    0 25px 65px #0005,
+    0 2px 6px #0004;
+  transform-origin: center;
+  will-change: transform;
+}
+.art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+.foil {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  padding-top: 18px;
+}
+.controls button {
+  border: 1px solid #ffffff26;
+  border-radius: 8px;
+  padding: 9px 13px;
+  background: #ffffff09;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.controls button:hover {
+  background: #ffffff15;
+}
+.controls button:focus-visible {
+  outline: 2px solid #dfbd71;
+  outline-offset: 3px;
+}
+.controls span {
+  flex-basis: 100%;
+  color: #89919f;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface {
+    transform: none !important;
+    will-change: auto;
+  }
+}

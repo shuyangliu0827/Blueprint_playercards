@@ -8,7 +8,7 @@ it('writes pixel density and synthetic provenance without personal data', () => 
   const out = addPngMetadata(input, 300, 'v1');
   const s = new TextDecoder().decode(out);
   expect(s).toContain('iTXt');
-  expect(s).toContain('MockGenerator');
+  expect(s).toContain('BlueprintCardRenderer');
   expect(s).toContain('pHYs');
   expect(new DataView(out.buffer).getUint32(41)).toBe(11811);
   expect(out.slice(-12)).toEqual(input.slice(-12));

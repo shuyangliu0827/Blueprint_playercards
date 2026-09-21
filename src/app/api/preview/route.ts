@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { join } from 'node:path';
-import { PreviewError, PreviewService, verifyAnonCookie } from '../../../server/preview-service';
+import { PreviewError } from '../../../server/preview-service';
+import { previewService as service, ownSession } from '../../../server/preview-runtime';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const MAX_BODY_BYTES = 20 * 1024;
 const COOKIE = 'bp_anon';
 
-declare global {
-  var __basketballPreviewService: PreviewService | undefined;
-}
-
-function service(): PreviewService {
-  if (!globalThis.__basketballPreviewService)
-    globalThis.__basketballPreviewService = new PreviewService({
-      configDirectory: join(process.cwd(), 'config'),
-      drawSecret: process.env.DRAW_HMAC_SECRET ?? '',
-      ipHashSalt: process.env.IP_HASH_SALT ?? '',
-    });
-  return globalThis.__basketballPreviewService;
-}
 function record(value: unknown, keys: readonly string[]): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new PreviewError('BAD_REQUEST', 'request body must be an object');
@@ -27,21 +14,6 @@ function record(value: unknown, keys: readonly string[]): Record<string, unknown
   for (const key of Object.keys(result))
     if (!keys.includes(key)) throw new PreviewError('BAD_REQUEST', `unexpected field ${key}`);
   return result;
-}
-function ownSession(request: NextRequest): string {
-  const id = verifyAnonCookie(
-    request.cookies.get(COOKIE)?.value,
-    process.env.DRAW_HMAC_SECRET ?? '',
-  );
-  if (!id) throw new PreviewError('SESSION_REQUIRED', 'start a signed session first', 401);
-  // A valid signed cookie survives a serverless process restart. Recreate only
-  // the volatile identity so observations and new work remain usable.
-  service().createSession(
-    request.cookies.get(COOKIE)?.value,
-    undefined,
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-  );
-  return id;
 }
 function response(value: unknown, status = 200) {
   return NextResponse.json(value, { status, headers: { 'Cache-Control': 'no-store' } });

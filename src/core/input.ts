@@ -22,6 +22,7 @@ export interface CardInput {
   readonly position: Position;
   readonly handedness: Handedness;
   readonly faceDetection: FaceDetectionResult;
+  readonly subjectDetection?: { readonly personCount: number; readonly selectedPersonIndex?: number };
   readonly faceProcessingConsent: boolean;
   readonly photoRightsConfirmed: boolean;
   readonly adultSelfDeclaration: boolean;
@@ -62,7 +63,8 @@ export type InputIssueCode =
   | 'JERSEY_NUMBER_REQUIRED' | 'JERSEY_NUMBER_INVALID' | 'POSITION_REQUIRED' | 'POSITION_INVALID'
   | 'HANDEDNESS_REQUIRED' | 'HANDEDNESS_INVALID' | 'FACE_RESULT_REQUIRED' | 'FACE_NOT_DETECTED'
   | 'SUBJECT_SELECTION_REQUIRED' | 'SUBJECT_SELECTION_INVALID' | 'FACE_CONSENT_REQUIRED'
-  | 'PHOTO_RIGHTS_REQUIRED' | 'ADULT_DECLARATION_REQUIRED' | 'PHOTO_SHORT_EDGE_LOW';
+  | 'PHOTO_RIGHTS_REQUIRED' | 'ADULT_DECLARATION_REQUIRED' | 'PHOTO_SHORT_EDGE_LOW'
+  | 'PERSON_NOT_DETECTED' | 'SUBJECT_RESULT_INVALID';
 
 export interface InputIssue { readonly code: InputIssueCode; readonly field: string }
 export interface InputValidationResult {
@@ -179,7 +181,18 @@ export function validateCardInput(candidate: unknown, config: InputConfig, playe
   else if (!config.handedness.includes(handedness as never)) errors.push(issue('HANDEDNESS_INVALID', 'handedness'));
 
   const faceDetection = candidate.faceDetection;
-  if (!isRecord(faceDetection) || !Number.isInteger(faceDetection.faceCount) || typeof faceDetection.angle !== 'string' || !['F', 'L', 'R', 'UNCERTAIN'].includes(faceDetection.angle)) errors.push(issue('FACE_RESULT_REQUIRED', 'faceDetection'));
+  const subjectDetection = candidate.subjectDetection;
+  if (subjectDetection !== undefined) {
+    if (!isRecord(subjectDetection) || !Number.isInteger(subjectDetection.personCount) || (subjectDetection.personCount as number) < 0) {
+      errors.push(issue('SUBJECT_RESULT_INVALID', 'subjectDetection'));
+    } else if (subjectDetection.personCount === 0) {
+      errors.push(issue('PERSON_NOT_DETECTED', 'subjectDetection.personCount'));
+    } else if (subjectDetection.selectedPersonIndex !== undefined && (!Number.isInteger(subjectDetection.selectedPersonIndex) || (subjectDetection.selectedPersonIndex as number) < 0 || (subjectDetection.selectedPersonIndex as number) >= (subjectDetection.personCount as number))) {
+      errors.push(issue('SUBJECT_SELECTION_INVALID', 'subjectDetection.selectedPersonIndex'));
+    } else if ((subjectDetection.personCount as number) > 1 && subjectDetection.selectedPersonIndex === undefined) {
+      errors.push(issue('SUBJECT_SELECTION_REQUIRED', 'subjectDetection.selectedPersonIndex'));
+    }
+  } else if (!isRecord(faceDetection) || !Number.isInteger(faceDetection.faceCount) || typeof faceDetection.angle !== 'string' || !['F', 'L', 'R', 'UNCERTAIN'].includes(faceDetection.angle)) errors.push(issue('FACE_RESULT_REQUIRED', 'faceDetection'));
   else if ((faceDetection.faceCount as number) < 1) errors.push(issue('FACE_NOT_DETECTED', 'faceDetection.faceCount'));
   else {
     if (faceDetection.selectedFaceIndex !== undefined && (!Number.isInteger(faceDetection.selectedFaceIndex) || (faceDetection.selectedFaceIndex as number) < 0 || (faceDetection.selectedFaceIndex as number) >= (faceDetection.faceCount as number))) {
@@ -204,7 +217,8 @@ export function validateCardInput(candidate: unknown, config: InputConfig, playe
       jerseyNumber: jerseyNumber as string,
       position: position as Position,
       handedness: handedness as Handedness,
-      faceDetection: faceDetection as unknown as FaceDetectionResult,
+      faceDetection: subjectDetection !== undefined ? { faceCount: 0, angle: 'UNCERTAIN' } : faceDetection as unknown as FaceDetectionResult,
+      ...(subjectDetection !== undefined ? { subjectDetection: subjectDetection as CardInput['subjectDetection'] } : {}),
       faceProcessingConsent: true,
       photoRightsConfirmed: true,
       adultSelfDeclaration: true,

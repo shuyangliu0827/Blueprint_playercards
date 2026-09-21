@@ -33,6 +33,29 @@ function validInput(overrides: Partial<CardInput> = {}): CardInput {
 }
 
 describe('card input validation', () => {
+  test('accepts a selected back-facing person with zero visible faces and retains the subject result', () => {
+    const candidate = {
+      ...validInput({ faceDetection: { faceCount: 0, angle: 'UNCERTAIN' } }),
+      subjectDetection: { personCount: 3, selectedPersonIndex: 1 },
+    };
+    const result = validateCardInput(candidate, inputConfig, playerNames);
+    expect(result.ok).toBe(true);
+    expect(result.value).toMatchObject({ subjectDetection: candidate.subjectDetection });
+  });
+
+  test('requires a subject choice when several bodies are detected even if a face is visible', () => {
+    const result = validateCardInput({ ...validInput(), subjectDetection: { personCount: 3 } }, inputConfig, playerNames);
+    expect(result.errors.map((error) => error.code)).toContain('SUBJECT_SELECTION_REQUIRED');
+  });
+
+  test.each([0, -1, 1.5])('rejects invalid person count %s instead of falling back to spectators faces', (personCount) => {
+    expect(validateCardInput({ ...validInput(), subjectDetection: { personCount } }, inputConfig, playerNames).ok).toBe(false);
+  });
+
+  test('rejects an out-of-range person selection', () => {
+    const result = validateCardInput({ ...validInput(), subjectDetection: { personCount: 2, selectedPersonIndex: 2 } }, inputConfig, playerNames);
+    expect(result.errors.map((error) => error.code)).toContain('SUBJECT_SELECTION_INVALID');
+  });
   test.each(['photo', 'nickname', 'jerseyNumber', 'position', 'handedness'] as const)(
     'rejects a missing required %s field',
     (field) => {

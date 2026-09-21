@@ -49,6 +49,15 @@ function harness(randoms: number[] = [], directory = configDirectory) {
 }
 
 describe('PreviewService jobs', () => {
+  it('accepts a back-facing person selection through the server boundary without a detected face', () => {
+    const h = harness();
+    const job = h.service.submit(h.session.anonId, {
+      requestId: requestId(true),
+      input: { ...input, faceDetection: { faceCount: 0, angle: 'UNCERTAIN' }, subjectDetection: { personCount: 4, selectedPersonIndex: 0 } },
+      mode: 'fast', scenario: 'success', reason: 'initial',
+    });
+    expect(job.status).toBe('pending');
+  });
   it('reserves three concurrent slots and counts only completed cards', () => {
     const h = harness();
     const jobs = [requestId(true), requestId(), requestId()];

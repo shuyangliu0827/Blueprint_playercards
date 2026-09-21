@@ -78,8 +78,8 @@ export async function composeShare(
       c.drawImage(card, 1330, 160, 950, 1330);
       c.font = '28px Arial,"PingFang SC",sans-serif';
       c.fillStyle = '#9facbf';
-      c.fillText('原始照片 · 仅保留在你的浏览器', 95, 1480);
-      c.fillText('AI 辅助合成 / 开发预览', 1330, 1510);
+      c.fillText('原始照片 · 用户提供', 95, 1480);
+      c.fillText('AI 艺术生成 · BLUEPRINT', 1330, 1510);
     }
   }
   return { canvas, blob: await canvasPng(canvas, dpi, templateVersion) };
