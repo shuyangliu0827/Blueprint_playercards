@@ -25,7 +25,9 @@ await page.route('**/api/generate', async (route) => {
     draw: {
       tier: requests.length === 1 ? 'gold' : 'prism',
       cardId: 'TEST-CARD-' + requests.length,
-      configVersion: 'test',
+      configVersion: 'v0.2.0',
+      material:requests.length===1?'gold':'prism',
+      series:requests.length===1?'aura':'animation',
     },
     poseId: 'test',
     mirror: false,
@@ -80,7 +82,7 @@ try {
   await page.getByRole('button', { name: '关闭提示' }).click();
   await page.locator('input[type=file]').nth(1).setInputFiles([photo, photo]);
   await page.getByRole('button', { name: '移除参考 2' }).waitFor();
-  await page.getByRole('button', { name: 'AURA 艺术人物' }).click();
+
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toDataURL;
     let once = true;
@@ -102,17 +104,17 @@ try {
     throw Error('Render retry did not restore cached artwork');
   if ((requests[0].match(/name="photos"/g) || []).length !== 3)
     throw Error('Not all 3 photos uploaded');
-  if (!requests[0].includes('\r\n\r\naura\r\n')) throw Error('Wrong series');
+  if (!requests[0].includes('\r\n\r\nclassic\r\n')) throw Error('Client should not choose a special series');
   const initial = await page.locator('.result-card img').first().getAttribute('src');
   await page.screenshot({
     path: '../output/cards/mvp-integration/aura-result.png',
     fullPage: true,
   });
-  const foil = page.locator('.result-card canvas').first();
-  const before = await foil.evaluate((c) => c.toDataURL());
+  const foil = page.locator('.result-card .bp-full-foil');
+  const before = await foil.getAttribute('style');
   await foil.hover({ position: { x: 50, y: 90 }, force: true });
   await page.waitForTimeout(450);
-  const after = await foil.evaluate((c) => c.toDataURL());
+  const after = await foil.getAttribute('style');
   if (before === after) throw Error('Material does not react to pointer');
   await page.getByRole('button', { name: '保存我的篮球卡' }).click();
   await page.locator('.export-image').waitFor();
@@ -121,11 +123,12 @@ try {
     .evaluate((i) => ({ width: i.naturalWidth, height: i.naturalHeight }));
   if (dims.width !== 1000 || dims.height !== 1400)
     throw Error('Wrong export dimensions ' + JSON.stringify(dims));
+  await page.locator('.export-image').screenshot({path:'docs/screenshots/new-material-export.png'});
   await page.getByRole('button', { name: '关闭导出' }).click();
   await page.getByRole('button', { name: '再做一张' }).click();
   await page.getByLabel('02 / 卡面昵称').fill('小林');
   await page.getByLabel('03 / 球衣号码').fill('23');
-  await page.getByRole('button', { name: 'ANIMATION 美漫人物' }).click();
+
   await page.getByRole('button', { name: '制作我的篮球卡' }).click();
   await page.getByRole('button', { name: '保存我的篮球卡' }).waitFor({ timeout: 30000 });
   const second = await page.locator('.result-card img').first().getAttribute('src');

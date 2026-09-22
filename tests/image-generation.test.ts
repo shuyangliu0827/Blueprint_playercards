@@ -8,7 +8,7 @@ const jpeg = new Uint8Array([255,216,255,192,0,17,8,4,0,4,0,3,1,17,0,2,17,0,3,17
 const photo = () => new File([jpeg], 'photo.jpg', { type:'image/jpeg' });
 const input = { photo: {mimeType:'image/jpeg',byteSize:jpeg.length,width:1024,height:1024},nickname:'Ace',jerseyNumber:'7',position:'PG' as const,handedness:'RIGHT' as const,faceDetection:{faceCount:0,angle:'UNCERTAIN' as const},subjectDetection:{personCount:1},faceProcessingConsent:true,photoRightsConfirmed:true,adultSelfDeclaration:true };
 let counter = 1;
-function request(): GenerationRequest { return { requestId:`${String(counter++).padStart(8,'0')}-0000-4000-8000-000000000000:0:v0.1.0`,input,series:'classic',subject:{x:0,y:0,w:1,h:1,confidence:.9},photos:[photo()] }; }
+function request(): GenerationRequest { return { requestId:`${String(counter++).padStart(8,'0')}-0000-4000-8000-000000000000:0:v0.2.0`,input,series:'classic',subject:{x:0,y:0,w:1,h:1,confidence:.9},photos:[photo()] }; }
 function output() { const png = Buffer.alloc(33); Buffer.from([137,80,78,71,13,10,26,10]).copy(png);png.write('IHDR',12);png.writeUInt32BE(1024,16);png.writeUInt32BE(1536,20);return new Response(JSON.stringify({data:[{b64_json:png.toString('base64')}]})); }
 function harness(fetcher: typeof fetch = vi.fn(async () => output())) {
   let now = Date.now();
@@ -55,3 +55,6 @@ describe('real image generation',()=>{
   it('rejects corrupt input/output, invalid selection, and missing photos',async()=>{expect(()=>jpegDimensions(new Uint8Array([1,2,3]))).toThrow('JPEG');expect(()=>parseGenerationForm(new FormData())).toThrow();const h=harness(vi.fn(async()=>new Response(JSON.stringify({data:[{b64_json:'not-an-image'}]}))));await expect(h.service.generate(h.actor,request())).rejects.toMatchObject({code:'PROVIDER_INVALID_OUTPUT'});await expect(h.service.generate(h.actor,{...request(),subject:{x:0,y:0,w:2,h:1,confidence:.8}})).rejects.toMatchObject({code:'BAD_REQUEST'});});
   it('enforces signed sessions at the HTTP boundary and exposes safe status',async()=>{const get=await GET();expect(await get.json()).toEqual({configured:Boolean(process.env.OPENAI_API_KEY?.trim()),model:'gpt-image-2'});const result=await POST(new NextRequest('http://localhost/api/generate',{method:'POST',body:new FormData()}));expect(result.status).toBe(401);expect(await result.json()).toMatchObject({error:'SESSION_REQUIRED'});});
 });
+
+it('uses the server-drawn series even when the client asks for a special edition',async()=>{const h=harness();const r={...request(),series:'animation' as const};const result=await h.service.generate(h.actor,r);const call=(h.fetcher as ReturnType<typeof vi.fn>).mock.calls[0] as [string,RequestInit];expect((call[1].body as FormData).get('prompt')).toBe(artworkPrompt({...r,series:result.job.draw.series!}));expect(result.job.draw.material).toBeTruthy();});
+it('rejects archived probability versions for fresh paid generation',async()=>{const h=harness();const r=request();r.requestId=r.requestId.replace('v0.2.0','v0.1.0');await expect(h.service.generate(h.actor,r)).rejects.toMatchObject({code:'CONFIG_EXPIRED'});expect(h.fetcher).not.toHaveBeenCalled();});

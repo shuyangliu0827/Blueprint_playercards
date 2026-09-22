@@ -1399,3 +1399,6 @@ footer button {
     right: 2%;
   }
 }
+/* Fourteen collectible finishes replace the old five-row sampler. */
+.material-list {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;max-width:420px;}
+.material-copy > small {display:block;max-width:420px;line-height:1.8;}

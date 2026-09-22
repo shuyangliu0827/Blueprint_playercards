@@ -21,7 +21,7 @@ function changeRegistry(dir: string, mutate: (r: any) => void) {
 describe('server refuses invalid or changed configuration before drawing', () => {
   it('loads the active config and freezes its nested contents', () => {
     const result = loadRarityRegistry(configDir);
-    expect(result.activeVersion).toBe('v0.1.0');
+    expect(result.activeVersion).toBe('v0.2.0');
     const config = result.registry.get(result.activeVersion) as any;
     expect(config.tiers).toHaveLength(5);
     expect(() => config.tiers[0].weight = 99).toThrow();

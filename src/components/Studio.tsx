@@ -29,6 +29,9 @@ import {
 } from '../platform/photo';
 import { renderMvpCard, type CardSeries } from '../render/mvp-card';
 import CardView from './MvpCardView';
+import {CARD_MATERIALS,materialForCard,type CardMaterial} from '../render/cards-css';
+import {MATERIAL_IDS,materialTier} from '../core/collectibles';
+import {exportFoilCard} from '../render/foil-export';
 import {
   generationStatus,
   generationPayload,
@@ -63,6 +66,7 @@ type Result = {
   tier: Tier;
   requestId: string;
   series: CardSeries;
+  material: CardMaterial;
 };
 const issueText: Record<string, string> = {
   NICKNAME_REQUIRED: '给自己起一个卡面昵称。',
@@ -95,13 +99,13 @@ export default function Studio() {
     [number, setNumber] = useState(''),
     [position, setPosition] = useState<Position | ''>(''),
     [hand, setHand] = useState<Handedness | ''>(''),
-    [series, setSeries] = useState<CardSeries>('classic'),
+    [series] = useState<CardSeries>('classic'),
     [references, setReferences] = useState<PreparedPhoto[]>([]),
     [provider, setProvider] = useState<GenerationStatus | null>(null),
     [providerError, setProviderError] = useState(''),
     [job, setJob] = useState<JobView | null>(null),
     [result, setResult] = useState<Result | null>(null),
-    [selectedTier, setSelectedTier] = useState<Tier>('prism'),
+    [selectedMaterial, setSelectedMaterial] = useState<(typeof MATERIAL_IDS)[number]>('prism'),
     [exampleFront, setExampleFront] = useState('/assets/mvp/aura.png'),
     [exampleBack, setExampleBack] = useState(''),
     [asset, setAsset] = useState<{ url: string; blob: Blob; type: AssetType } | null>(null),
@@ -109,6 +113,7 @@ export default function Studio() {
     [elapsed, setElapsed] = useState(0),
     [debug, setDebug] = useState(false),
     [metrics, setMetrics] = useState<unknown>(null);
+  const selectedTier=materialTier(selectedMaterial);
   const fileRef = useRef<HTMLInputElement>(null),
     referenceRef = useRef<HTMLInputElement>(null),
     referencesRef = useRef<PreparedPhoto[]>([]),
@@ -176,7 +181,7 @@ export default function Studio() {
         handedness: '右手',
         cardId: 'EXAMPLE · DESIGN PREVIEW',
         aiLabel: 'AI 合成示例 / 内部预览',
-        tierName: effect.materials.find((m) => m.id === selectedTier)!.label,
+        tierName: CARD_MATERIALS[selectedMaterial].label,
         story: '林一身披07号，以控球后卫视角阅读球场。每次移动都变成下一次选择的起点。',
         seriesName: 'BLUEPRINT',
         issuedAt: '',
@@ -196,7 +201,7 @@ export default function Studio() {
     return () => {
       active = false;
     };
-  }, [selectedTier]);
+  }, [selectedMaterial,selectedTier]);
   async function track(name: string, fields: Record<string, unknown> = {}) {
     if (!session) return;
     try {
@@ -327,6 +332,8 @@ export default function Studio() {
       const i = savedInput.current;
       const art = await loadImage(payload.artwork);
       const tier = j.draw.tier as Tier;
+      savedSeries.current=j.draw.series??savedSeries.current;
+      const material=j.draw.material??materialForCard(tier,savedSeries.current);
       const data: CardData = {
         nickname: i.nickname,
         jerseyNumber: i.jerseyNumber,
@@ -334,7 +341,7 @@ export default function Studio() {
         handedness: i.handedness === 'LEFT' ? '左手' : '右手',
         cardId: j.draw.cardId,
         aiLabel: 'AI 艺术生成 · BLUEPRINT',
-        tierName: effect.materials.find((m) => m.id === tier)!.label,
+        tierName: CARD_MATERIALS[material].label,
         story: buildStory(
           {
             nickname: i.nickname,
@@ -350,13 +357,7 @@ export default function Studio() {
       };
       const front = await renderMvpCard({ artwork: art, data, series: savedSeries.current, tier });
       const back = await renderCard(layout, effect, data, art, tier, 'back', false);
-      const card = await renderMvpCard({
-        artwork: art,
-        data,
-        series: savedSeries.current,
-        tier,
-        includeMaterial: true,
-      });
+      const card = await exportFoilCard(front,material);
       // Serialization can fail independently of drawing. Finish all local work before charging quota.
       prepared = {
         front: front.toDataURL(),
@@ -366,6 +367,7 @@ export default function Studio() {
         tier,
         series: savedSeries.current,
         requestId: j.requestId,
+        material,
       };
     } catch (error) {
       if (j.status !== 'complete') {
@@ -592,7 +594,7 @@ export default function Studio() {
         <nav>
           <a href="#how">制作方式</a>
           <a href="#materials">材质图鉴</a>
-          <a href="/debug/thumbnails">缩略图评审 ↗</a>
+          <a href="/debug/foil">14 种材质图鉴 ↗</a>
         </nav>
         <span className="preview-badge">
           <i />
@@ -618,7 +620,7 @@ export default function Studio() {
                 <button className="primary hero-cta" onClick={start}>
                   做我的篮球卡 <span>↗</span>
                 </button>
-                <p className="cta-note">免费制作 3 张 · 无需登录 · 首张必得闪卡</p>
+                <p className="cta-note">免费制作 3 张 · 无需登录 · 每张都有收藏卡反光材质</p>
                 <div className="hero-foot">
                   <span className="little-ball">◉</span>
                   <span>每一个上场的你，都值得一张。</span>
@@ -631,7 +633,7 @@ export default function Studio() {
                 <img
                   className="sample sample-left"
                   src="/assets/mvp/silver.png"
-                  alt="银折卡设计样张"
+                  alt="篮球卡版型设计样张"
                 />
                 <img
                   className="sample sample-right"
@@ -668,34 +670,34 @@ export default function Studio() {
             </section>
             <section className="materials" id="materials">
               <div className="material-copy">
-                <div className="eyebrow">FIVE FINISHES. ONE YOU.</div>
+                <div className="eyebrow">14 FINISHES. ONE YOU.</div>
                 <h2>
                   同一个你，
                   <br />
                   不同的<span>光。</span>
                 </h2>
                 <p>
-                  基础的克制、银折的清亮、棱镜的变幻。
+                  全息、银河、棱镜、金色秘闪……14 种收藏卡材质。
                   <br />
                   选一种看看，轻轻拖动卡面。
                 </p>
                 <div className="material-list">
-                  {effect.materials.map((m) => (
+                  {MATERIAL_IDS.map((id) => ({id,label:CARD_MATERIALS[id].label})).map((m) => (
                     <button
                       key={m.id}
-                      className={selectedTier === m.id ? 'selected' : ''}
-                      onClick={() => setSelectedTier(m.id)}
+                      className={selectedMaterial === m.id ? 'selected' : ''}
+                      onClick={() => setSelectedMaterial(m.id)}
                     >
                       <i className={`swatch ${m.id}`} />
                       {m.label}
-                      <span>{selectedTier === m.id ? '↗' : '＋'}</span>
+                      <span>{selectedMaterial === m.id ? '↗' : '＋'}</span>
                     </button>
                   ))}
                 </div>
-                <small>这里只是材质预览；制作时由系统揭晓你的卡。</small>
+                <small>14 种材质等概率抽取，每种约 7.14%。版型独立抽取：ORIGINAL 98%，AURA 1%，ANIMATION 1%。</small>
               </div>
               <div className="material-demo">
-                <CardView front={exampleFront} back={exampleBack} tier={selectedTier} />
+                <CardView front={exampleFront} back={exampleBack} tier={selectedTier} material={selectedMaterial} />
               </div>
             </section>
           </>
@@ -898,26 +900,9 @@ export default function Studio() {
                     </div>
                   </div>
                   <div className="field">
-                    <label>选择卡片系列</label>
-                    <div className="position-options">
-                      {(
-                        [
-                          ['classic', 'ORIGINAL', '真实运动摄影'],
-                          ['aura', 'AURA', '艺术人物 · 虚拟意境'],
-                          ['animation', 'ANIMATION', '美漫人物 · 异想球场'],
-                        ] as const
-                      ).map(([id, name, text]) => (
-                        <button
-                          key={id}
-                          className={series === id ? 'chosen' : ''}
-                          onClick={() => setSeries(id)}
-                        >
-                          <b>{name}</b>
-                          <span>{text}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <small>版式保持一致，人物和场景根据你的照片及信息重新生成。</small>
+                    <label>随机揭晓卡片版型</label>
+                    <p>ORIGINAL 98% · AURA 1% · ANIMATION 1%</p>
+                    <small>版型和 14 种材质分别抽取；特卡由系统随机揭晓。</small>
                   </div>
                   <div className="consents">
                     <label>
@@ -1021,6 +1006,7 @@ export default function Studio() {
                     back={result.back}
                     tier={result.tier}
                     series={result.series}
+                    material={result.material}
                   />
                 </div>
                 <div className="result-copy">

@@ -1,11 +1,16 @@
 {
   "schemaVersion": "1.0.0",
-  "activeVersion": "v0.1.0",
+  "activeVersion": "v0.2.0",
   "versions": [
     {
       "configVersion": "v0.1.0",
       "file": "rarity_v0.json",
       "sha256": "269303b5dd4656370c0f4b2981aa3fd0d9bbffc53d01f5ddad9945d0d7773fd6"
+    },
+    {
+      "configVersion": "v0.2.0",
+      "file": "rarity_v1.json",
+      "sha256": "0d35bad1c11cdd091df937838b5e19b9e4d265e1720a97ba2a7dd29b29f22d8b"
     }
   ]
 }

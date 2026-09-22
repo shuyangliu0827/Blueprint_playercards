@@ -30,7 +30,7 @@ it('service creation requires secret from explicit environment input', () => {
 });
 it('service returns only public version and stable draw result', () => {
   const service = createDrawService(configDir, { DRAW_HMAC_SECRET: secret });
-  expect(service.publicConfig).toEqual({ configVersion: 'v0.1.0' });
+  expect(service.publicConfig).toEqual({ configVersion: 'v0.2.0' });
   const request = '12345678-1234-4123-8123-123456789abc:1:v0.1.0';
   const result = service.draw(request);
   expect(result).toMatchObject({ configVersion: 'v0.1.0' });

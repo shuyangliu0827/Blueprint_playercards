@@ -370,6 +370,7 @@ export class PreviewService {
       if (existing.liveFingerprint !== fingerprint) throw new PreviewError('REQUEST_MISMATCH', 'requestId is already bound to different input', 409);
       return { job: this.view(existing), created: false };
     }
+    if(parseRequestId(requestId).configVersion!==this.config.activeVersion)throw new PreviewError('CONFIG_EXPIRED','抽卡配置已更新，请刷新页面后重新制作。',409);
     this.submit(anonId, { requestId, input, mode: 'normal', scenario: 'success', reason: 'new' });
     const job = this.owned(anonId, requestId);
     job.liveFingerprint = fingerprint;

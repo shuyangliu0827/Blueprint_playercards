@@ -105,7 +105,7 @@ export class ImageGenerationService {
       this.entries.delete(old[0]);
     }
     const entry: Entry = { fingerprint, createdAt: now, pending: true, promise: undefined as never };
-    entry.promise = this.callProvider(request).then(artwork => ({ artwork, job: this.preview.providerSucceeded(actor, request.requestId) })).catch(error => {
+    entry.promise = this.callProvider({...request,series:reservation.job.draw.series??request.series}).then(artwork => ({ artwork, job: this.preview.providerSucceeded(actor, request.requestId) })).catch(error => {
       this.preview.providerFailed(actor, request.requestId);
       throw error instanceof PreviewError ? error : new PreviewError('PROVIDER_FAILED', '图片生成失败，请稍后手动重试。', 502);
     }).finally(() => { entry.pending = false; });

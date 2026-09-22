@@ -1,0 +1,47 @@
+/* The complete kongyo2/cards-css engine is imported unchanged. Photo-friendly full-card reflection and basketball sizing; see cards-css-photo.css. */
+.bp-holo-mount {width:100%;aspect-ratio:5/7;min-width:0;}
+.bp-full-foil {width:100%;--card-radius:14px;--card-aspect:0.7142857143;isolation:isolate;}
+/* No full-face dimming mask. Keep the whole foil recipe visible. */
+.bp-full-foil .holo-card__image {object-fit:contain;}
+.bp-full-foil[data-material='none'] .holo-card__shine,
+.bp-full-foil[data-material='none'] .holo-card__glare,
+.bp-full-foil[data-flipped='true'] .holo-card__shine,
+.bp-full-foil[data-flipped='true'] .holo-card__glare {display:none;}
+.bp-full-foil[data-still='true'] .holo-card__rotator {pointer-events:none;transform:none !important;}
+.bp-material-picker {display:flex;align-items:center;gap:8px;font-size:12px;}
+.bp-material-picker select {max-width:160px;background:#151922;color:#f3efe6;padding:7px;border:1px solid #7776;border-radius:6px;}
+.bp-material-picker input {width:120px;accent-color:#dfbd71;}
+@media(prefers-reduced-motion:reduce){.bp-full-foil *{transition:none !important;}}
+/* Full-face soft reflection: opacity controls texture density, not a white spotlight. */
+.bp-full-foil .holo-card__shine {
+  opacity:var(--bp-shine-opacity,var(--hc-shine-opacity)) !important;
+  filter:var(--bp-shine-filter,brightness(var(--hc-brightness)) contrast(var(--hc-contrast)) saturate(var(--hc-saturate))) !important;
+  mix-blend-mode:var(--bp-shine-blend,color-dodge) !important;
+}
+.bp-full-foil .holo-card__glare {
+  background-image:var(--bp-glare-image,linear-gradient(calc(119deg + var(--pointer-dx) * 12deg),rgba(255,255,255,0) 13%,rgba(255,255,255,.168) 33.35%,rgba(255,255,255,.56) 50%,rgba(255,255,255,.168) 66.65%,rgba(255,255,255,0) 87%)) !important;
+  background-size:200% 200%;
+  background-position:calc(50% + var(--pointer-dx) * var(--bp-glare-travel,100%)) calc(50% + var(--pointer-dy) * 30%);
+  mix-blend-mode:var(--bp-glare-blend,hard-light) !important;
+  opacity:var(--bp-glare-opacity,.41) !important;
+  filter:none !important;
+}
+.bp-full-foil .holo-card__glare::after {display:none;}
+
+.bp-foil-tuning .holo-card__shine {filter:var(--bp-shine-filter) !important;}
+.foil-tuning-layout {display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;align-items:start;margin-top:24px;}
+.foil-tune-panel {position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding:18px;border:1px solid #ffffff25;border-radius:14px;background:#191d27;}
+.foil-tune-panel h2 {font-size:20px;margin:0 0 8px;}
+.foil-tune-panel p {font-size:12px;color:#afb7c7;line-height:1.7;}
+.foil-tune-panel fieldset {border:1px solid #ffffff20;padding:12px;margin-top:16px;border-radius:8px;}
+.foil-tune-panel legend {font-size:14px;color:#ead7ab;}
+.foil-tune-field {display:grid;grid-template-columns:1fr auto;gap:6px;font-size:12px;margin:12px 0;}
+.foil-tune-field input,.foil-tune-field select {grid-column:1/-1;width:100%;accent-color:#dfbd71;}
+.foil-tune-field select,.foil-tune-panel textarea {background:#101218;color:#eee;border:1px solid #ffffff30;border-radius:5px;padding:6px;}
+.foil-tune-actions {display:flex;gap:8px;}
+.foil-tune-actions button {padding:8px;border:1px solid #b99d60;border-radius:6px;background:#242936;color:#f4e9cf;cursor:pointer;}
+.foil-tune-panel textarea {width:100%;font-size:11px;box-sizing:border-box;}
+.foil-tune-panel summary {cursor:pointer;font-size:12px;}
+@media(max-width:760px){.foil-tuning-layout{grid-template-columns:1fr;}.foil-tune-panel{position:relative;top:0;max-height:none;}}
+.foil-tune-panel,.bp-foil-tuning,.foil-tune-panel fieldset {min-width:0;}
+@media(max-width:760px){.foil-tuning-layout{grid-template-columns:minmax(0,1fr);}}

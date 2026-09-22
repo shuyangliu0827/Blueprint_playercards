@@ -9,16 +9,20 @@
     "config:check": "node --conditions=react-server --import tsx scripts/check-config.ts",
     "check": "npm run config:check && npm run typecheck && npm test",
     "dev": "next dev --hostname 0.0.0.0",
-    "build": "npm run config:check && next build",
-    "start": "npm run config:check && next start --hostname 0.0.0.0"
+    "build": "npm run motion:build && npm run config:check && next build",
+    "start": "npm run config:check && next start --hostname 0.0.0.0",
+    "motion:build": "node scripts/build-card-motion.mjs",
+    "motion:preview": "npm run motion:build && node scripts/preview-card-motion.mjs"
   },
   "engines": {
     "node": "24.x"
   },
   "dependencies": {
+    "@kongyo2/cards-css": "0.5.0",
     "@mediapipe/tasks-vision": "^1.0.1",
     "ajv": "8.20.0",
     "heic2any": "^0.0.4",
+    "html-to-image": "^1.11.13",
     "next": "^16.3.5",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",

@@ -1,6 +1,7 @@
+import {drawCollectible,type CollectibleMaterial,type CollectibleSeries} from './collectibles';
 import { TIER_IDS, validateRarityConfig, type Tier } from '../config/validate';
 
-export interface DrawResult { tier: Tier; cardId: string; configVersion: string }
+export interface DrawResult { material?:CollectibleMaterial; series?:CollectibleSeries; tier: Tier; cardId: string; configVersion: string }
 
 /**
  * Portable pure function: no framework, clock, random source, storage or platform API.
@@ -13,6 +14,7 @@ export function draw(config: unknown, seed: string, isFirstDraw: boolean): DrawR
   if (typeof seed !== 'string' || !/^[0-9a-fA-F]{64}$/.test(seed)) throw new Error('draw: expected 256-bit hexadecimal seed');
   if (typeof isFirstDraw !== 'boolean') throw new Error('draw: isFirstDraw must be boolean');
   const normalizedSeed = seed.toLowerCase();
+  if(c.collectibles)return {...drawCollectible(c.collectibles,normalizedSeed),cardId:`card_${normalizedSeed}`,configVersion:c.configVersion};
   const pool = TIER_IDS.filter(id => !(isFirstDraw && c.firstDraw.exclude.includes(id as 'base')))
     .map(id => c.tiers.find(t => t.id === id)!);
   const totalWeight = pool.reduce((sum, t) => sum + t.weight, 0);
