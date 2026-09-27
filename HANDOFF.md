@@ -1,18 +1,18 @@
 # 蓝本 BLUEPRINT｜开发交接
 
-更新日期：2026-09-21。面向接手开发者，涵盖产品约定、代码入口、启动、验证和下一步。
+更新日期：2026-09-27。面向接手开发者，涵盖产品约定、代码入口、启动、验证和下一步。生图服务已切换到阿里云百炼千问；接口细节以 [千问接入文档](docs/qwen-generation.md) 为准。以下历史验收数字仅对应当时版本。
 
 ## 1. 先确认你拿到的是哪个版本
 
-- 仓库：https://github.com/shuyangliu0827/blueprint-basketball-v0
+- 仓库：https://github.com/shuyangliu0827/Blueprint_playercards
 - 当前默认开发分支：`codex/v3-prototype`。
 - 本次功能更新之前的远程代码基线：`20a88902d9b53e223a5a737dedb2d60e3214b350`，提交说明 `Record live acceptance results and delivery links`。
-- **最新的人物检测、多图上传、OpenAI 生成、MVP 模板与必要素材随本文一起提交到 `codex/v3-prototype`。拉取该分支即可取得新版。**
-- 文档最初单独发布在 `codex/handoff-2026-09-21`；现以 `codex/v3-prototype` 中的 `HANDOFF.md` 和代码为准。推送不代表线上部署或真实模型验收已经通过。
+- 人物检测、多图上传和 MVP 模板以 `codex/v3-prototype` 为基线；**本次千问直连改动位于 `codex/qwen-image-api`，合并后可从默认开发分支取得。**
+- 文档最初单独发布在 `codex/handoff-2026-09-21`；现以包含本次改动的最新提交中的 `HANDOFF.md` 和代码为准。推送不代表线上部署或真实模型验收已经通过。
 - 本地目录为工作区下的 `v0-prototype/`；直接 clone 上述仓库后，仓库根目录就是 Next.js 项目根目录，不必再进入同名子目录。
 - 仓库当前是公开仓库。本次按项目所有者要求推送最新功能及应用所需样卡、测试照片和模型；`.env.local` 等秘密配置与临时工作日志不提交。
 
-**接手第一件事：拉取 `codex/v3-prototype` 最新提交，再配置本机环境并执行下文新版流程。**
+**接手第一件事：拉取包含千问直连改动的最新提交，再配置本机环境并执行下文新版流程。**
 
 ## 2. 已明确的产品与审美要求
 
@@ -39,13 +39,13 @@
 
 - MediaPipe person 检测，支持无正脸；多人选择和同意撤回时的异步竞态防护。
 - 保留原输入字段，新增最多 2 张参考照片及系列选择。
-- 服务端接入 OpenAI Images Edit API；无密钥时明确提示，不回退成假生成成功。
+- 服务端接入阿里云百炼 Qwen Image 3.0 图像编辑 API；缺少密钥或业务空间接口时明确提示，不回退成假生成成功。
 - 固定三套模板；动态折射随指针或设备倾斜变化；减少动态效果设置提供静态模式。
 - 1000×1400 卡片下载，包含静态材质；分享海报、缩略图、原图对比沿用浏览器导出。
 - 同一请求及照片内容复用结果，不自动重开付费生成；本地排版失败返还预留次数并复用画面。
 - 本地排版、图片读取和序列化成功后才确认发卡；完成接口响应中断时按服务器状态恢复。
 
-**尚未完成：**真实密钥配置、真实 OpenAI 图像质量验收、线上部署确认、生产级持久化和多实例状态管理。模型能否稳定保留人物身份、号码、动作和目标美术质量，需要接手后用真实输入实测。
+**尚未完成：**真实密钥配置、真实千问图像质量验收、线上部署确认、生产级持久化和多实例状态管理。模型能否稳定保留人物身份、号码、动作和目标美术质量，需要接手后用真实输入实测。
 
 ## 4. 本地启动
 
@@ -60,7 +60,7 @@ node scripts/start-local.mjs
 npm run dev
 ```
 
-上面的 clone/switch 取得新版分支；已有本地副本先执行 `git pull --ff-only origin codex/v3-prototype`，再进行 OpenAI 流程验证。
+上面的 clone/switch 取得新版分支；已有本地副本先执行 `git pull --ff-only origin codex/v3-prototype`，再进行千问流程验证。
 
 `start-local.mjs` 在 `.env.local` 不存在时生成本地随机秘密；如果文件已存在，它不会补齐缺失字段。不要先复制一个全空的 `.env.example` 再指望脚本补全。
 
@@ -70,7 +70,8 @@ npm run dev
 | --- | --- |
 | `DRAW_HMAC_SECRET` | 稳定的服务端抽取/签名秘密，至少 32 字节 |
 | `IP_HASH_SALT` | 服务端 IP 聚合散列盐，至少 32 字节 |
-| `OPENAI_API_KEY` | 服务端 OpenAI 密钥，最新版生成流程必需 |
+| `DASHSCOPE_API_KEY` | 服务端阿里云百炼密钥，生成流程必需 |
+| `QWEN_IMAGE_ENDPOINT` | 与密钥同地域的业务空间图片接口，生成流程必需 |
 
 不使用 `NEXT_PUBLIC_` 前缀，不在聊天、日志或 Git 中分享秘密。更改环境配置后重启服务。
 
@@ -93,7 +94,7 @@ npm run dev
 | `src/platform/generation.ts` | JPEG 转换、多图 multipart、生成状态与请求 |
 | `src/core/input.ts` | 表单与人物选择校验；保留旧 faceDetection 契约兼容 |
 | `src/app/api/generate/route.ts` | 实际生成 GET/POST 路由、请求大小和来源检查 |
-| `src/server/image-generation.ts` | 图像校验、生成提示词、OpenAI HTTP、请求去重及缓存 |
+| `src/server/image-generation.ts` | 图像校验、生成提示词、千问 HTTP、请求去重及缓存 |
 | `src/server/preview-runtime.ts` | 共享预览服务与签名 session |
 | `src/server/preview-service.ts` | 抽取、任务归属、预留、成功次数、失败与恢复 |
 | `src/app/api/preview/route.ts` | session、poll、complete、restore、render-failed、事件 |
@@ -116,7 +117,7 @@ npm run dev
 3. `POST /api/preview` 的 session 创建签名 `bp_anon` cookie。
 4. `POST /api/generate` 使用 multipart：`requestId`、`input` JSON、`series`、`subject` JSON、重复的 `photos` 文件字段。
 5. 服务端检查会话、输入、人物框、JPEG 内容和尺寸；将请求 ID 与输入、系列、主体和图片字节绑定，预留额度。
-6. 服务端调用 `https://api.openai.com/v1/images/edits`：当前实现 `gpt-image-2`、high、1024×1536、PNG、n=1；主图排第一，参考图只辅助身份。
+6. 服务端调用 `QWEN_IMAGE_ENDPOINT`：当前实现 `qwen-image-3.0`、1024×1536、PNG、n=1；主图排第一，参考图只辅助身份。服务端立即下载千问返回的临时图片 URL。
 7. 返回 `{ artwork: dataURL, job }`；浏览器把画面装入固定模板，绘制卡背及带静态材质的导出图。
 8. 本地绘制和序列化均成功后调用 `complete`，只确认一次成功。
 9. 排版失败调用 `render-failed`，保留已生成画面。重试先 poll 权威状态，需要时 restore，再排版，不再调用模型。完成响应丢失也使用同一任务核对。
@@ -131,7 +132,7 @@ npm run dev
 - 每进程最多 4 个上游调用、8 个缓存项，已结束缓存最长保留约 30 分钟，容量压力会提前淘汰。
 - 同请求 ID 不得更换图片/输入；旧画面已失效时提示重新明确发起请求，而不静默重生成。
 - 次数、任务、缓存和去重均为进程内存。重启会丢失，多实例不共享；现在只适用于内部单进程预览。
-- 图像上传经服务器转交 OpenAI；本机检测不上传。服务端不落盘照片，画面短暂缓存在内存；提供商处理遵循账号对应的数据保留设置。
+- 图像上传经服务器转交阿里云百炼；本机检测不上传。服务端不落盘照片，画面短暂缓存在内存；提供商处理遵循账号对应的数据保留设置。
 
 ## 7. 材质与模板注意事项
 
@@ -143,7 +144,7 @@ npm run dev
 
 ## 8. 已有验证及复验命令
 
-2026-09-21 最新本地版本已验证：配置检查、类型检查、19 个测试文件共 261 项测试、生产构建通过。以下是此前执行记录，不表示真实 OpenAI 调用已经验收。
+2026-09-21 的历史本地版本已验证：配置检查、类型检查、19 个测试文件共 261 项测试、生产构建通过。以下是此前执行记录，不表示真实千问调用已经验收。
 
 ```sh
 npm run check
@@ -164,7 +165,7 @@ node scripts/check-person-photo.mjs public/assets/mvp/demo-photo.jpg
 ## 9. 建议接手顺序
 
 1. **拉取最新分支**：获取 `codex/v3-prototype` 源码、模型及必要素材；不要提交本机秘密配置，后续新增照片先确认公开范围。
-2. **配置真实 OpenAI key**：确认账号具备模型权限及可用额度，手动生成一张，验证接口和真实耗时。
+2. **配置真实百炼 key 与业务空间接口**：确认账号具备模型权限及可用额度，手动生成一张，验证接口和真实耗时。
 3. **真实美术验收**：同一输入分别生成三系列；不同输入保持版式一致。检查主体身份、动作、肢体、球衣号码、中文姓名、AURA 背景虚化与美漫画风一致性。
 4. **边界验收**：背身、侧身、多人、1/2/3 图、低清图、上游失败、断网及排版失败；特别留意同一请求不重复付费。
 5. **持久化再部署**：共享数据库/存储保存任务、成功次数、去重和画面，加入分布式锁；明确访问、清理期限及成本限制。
@@ -175,10 +176,10 @@ node scripts/check-person-photo.mjs public/assets/mvp/demo-photo.jpg
 
 取得最新版源码后，按下列顺序阅读：
 
-1. `docs/openai-generation.md`：接口、环境配置、状态和完整验证记录。
+1. `docs/qwen-generation.md`：接口、环境配置、状态和验证方式。
 2. `docs/superpowers/specs/2026-09-21-mvp-generation.md`：新版范围。
 3. `docs/superpowers/plans/2026-09-21-mvp-generation.md`：实现分工。
-4. `docs/person-subject-update.md`：人物检测由来。该文件是前一阶段记录，其中“单图/本地排版”的状态已被新版多图和 OpenAI 流程替代。
+4. `docs/person-subject-update.md`：人物检测由来。该文件是前一阶段记录，其中“单图/本地排版”的状态已被新版多图和千问流程替代。
 5. `docs/input-decisions.md`、`docs/photo-decisions.md` 等历史记录：若与本文或新版实现冲突，核对最新代码及明确的用户要求，勿恢复旧人脸门槛。
 
 文档不包含 API 密钥、cookie、访问 token 或用户邮箱。协作账号与邀请状态通过 GitHub 仓库设置管理。

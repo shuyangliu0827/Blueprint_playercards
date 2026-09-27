@@ -13,7 +13,7 @@ try {
   await page.getByRole('button', { name: '做我的篮球卡' }).click();
   await page.locator('input[type=file]').first().setInputFiles(photo);
   await page
-    .getByLabel('我同意在本机识别人物，并将所选照片及卡片信息发送至 OpenAI 生成卡面。')
+    .getByLabel('我同意在本机识别人物，并将所选照片及卡片信息经本服务发送至阿里云百炼（千问）生成卡面。')
     .check();
   await page.locator('.face-options button').first().waitFor({ timeout: 60000 });
   const people = await page.locator('.face-options button').count();
@@ -37,7 +37,7 @@ try {
   await revoked.goto('http://localhost:3000', { waitUntil: 'networkidle' });
   await revoked.getByRole('button', { name: '做我的篮球卡' }).click();
   const consent = revoked.getByLabel(
-    '我同意在本机识别人物，并将所选照片及卡片信息发送至 OpenAI 生成卡面。',
+    '我同意在本机识别人物，并将所选照片及卡片信息经本服务发送至阿里云百炼（千问）生成卡面。',
   );
   await consent.check();
   await revoked.evaluate(() => {
