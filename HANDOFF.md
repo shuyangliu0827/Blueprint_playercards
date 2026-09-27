@@ -7,12 +7,12 @@
 - 仓库：https://github.com/shuyangliu0827/Blueprint_playercards
 - 当前默认开发分支：`codex/v3-prototype`。
 - 本次功能更新之前的远程代码基线：`20a88902d9b53e223a5a737dedb2d60e3214b350`，提交说明 `Record live acceptance results and delivery links`。
-- **最新的人物检测、多图上传、千问生成、MVP 模板与必要素材位于 `codex/v3-prototype`。拉取该分支即可取得新版。**
-- 文档最初单独发布在 `codex/handoff-2026-09-21`；现以 `codex/v3-prototype` 中的 `HANDOFF.md` 和代码为准。推送不代表线上部署或真实模型验收已经通过。
+- 人物检测、多图上传和 MVP 模板以 `codex/v3-prototype` 为基线；**本次千问直连改动位于 `codex/qwen-image-api`，合并后可从默认开发分支取得。**
+- 文档最初单独发布在 `codex/handoff-2026-09-21`；现以包含本次改动的最新提交中的 `HANDOFF.md` 和代码为准。推送不代表线上部署或真实模型验收已经通过。
 - 本地目录为工作区下的 `v0-prototype/`；直接 clone 上述仓库后，仓库根目录就是 Next.js 项目根目录，不必再进入同名子目录。
 - 仓库当前是公开仓库。本次按项目所有者要求推送最新功能及应用所需样卡、测试照片和模型；`.env.local` 等秘密配置与临时工作日志不提交。
 
-**接手第一件事：拉取 `codex/v3-prototype` 最新提交，再配置本机环境并执行下文新版流程。**
+**接手第一件事：拉取包含千问直连改动的最新提交，再配置本机环境并执行下文新版流程。**
 
 ## 2. 已明确的产品与审美要求
 
