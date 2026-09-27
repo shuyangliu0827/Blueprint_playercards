@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ImageGenerationService, IMAGE_MODEL, MAX_UPLOAD_BYTES, parseGenerationForm } from '../../../server/image-generation';
+import { ImageGenerationService, IMAGE_MODEL, MAX_UPLOAD_BYTES, parseGenerationForm, qwenEndpoint } from '../../../server/image-generation';
 import { ownSession, previewService } from '../../../server/preview-runtime';
 import { PreviewError } from '../../../server/preview-service';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 declare global { var __basketballImageService: ImageGenerationService | undefined; }
-function service() { return globalThis.__basketballImageService ??= new ImageGenerationService(previewService(), { apiKey: process.env.OPENAI_API_KEY }); }
+function service() { return globalThis.__basketballImageService ??= new ImageGenerationService(previewService(), { apiKey: process.env.DASHSCOPE_API_KEY, endpoint: process.env.QWEN_IMAGE_ENDPOINT }); }
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-export async function GET() { return json({ configured: Boolean(process.env.OPENAI_API_KEY?.trim()), model: IMAGE_MODEL }); }
+export async function GET() { return json({ configured: Boolean(process.env.DASHSCOPE_API_KEY?.trim() && qwenEndpoint(process.env.QWEN_IMAGE_ENDPOINT)), model: IMAGE_MODEL }); }
 export async function POST(request: NextRequest) {
   try {
     const origin = request.headers.get('origin');
     if (origin && origin !== request.nextUrl.origin) throw new PreviewError('ORIGIN_REJECTED', 'cross-origin generation is not allowed', 403);
     const actor = ownSession(request);
-    if (!service().status.configured) throw new PreviewError('PROVIDER_NOT_CONFIGURED', '尚未配置 OpenAI API Key，请联系管理员。', 503);
+    if (!service().status.configured) throw new PreviewError('PROVIDER_NOT_CONFIGURED', '尚未配置千问图像 API，请联系管理员。', 503);
     if (!request.headers.get('content-type')?.startsWith('multipart/form-data;')) throw new PreviewError('BAD_REQUEST', 'multipart/form-data is required');
     if (Number(request.headers.get('content-length')) > MAX_UPLOAD_BYTES) throw new PreviewError('BODY_TOO_LARGE', 'upload exceeds 30 MB', 413);
     const reader = request.body?.getReader();

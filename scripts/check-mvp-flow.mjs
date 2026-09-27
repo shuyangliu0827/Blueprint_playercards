@@ -15,7 +15,7 @@ let configured = false,
 // Only the browser transport is mocked. Server validation/provider lifecycle are exercised separately by Vitest.
 await page.route('**/api/generate', async (route) => {
   const req = route.request();
-  if (req.method() === 'GET') return route.fulfill({ json: { configured, model: 'gpt-image-2' } });
+  if (req.method() === 'GET') return route.fulfill({ json: { configured, model: 'qwen-image-3.0' } });
   const body = req.postDataBuffer().toString('latin1');
   requests.push(body);
   const requestId = body.match(/name="requestId"\r\n\r\n([^\r]+)/)?.[1];
@@ -65,7 +65,7 @@ try {
   await page.getByRole('button', { name: '做我的篮球卡' }).click();
   await page.locator('input[type=file]').first().setInputFiles(photo);
   await page
-    .getByLabel('我同意在本机识别人物，并将所选照片及卡片信息发送至 OpenAI 生成卡面。')
+    .getByLabel('我同意在本机识别人物，并将所选照片及卡片信息经本服务发送至阿里云百炼（千问）生成卡面。')
     .check();
   await page.locator('.face-options button').first().waitFor({ timeout: 60000 });
   await page.locator('.face-options button').first().click();

@@ -483,7 +483,7 @@ export default function Studio() {
       setProvider(status);
       setProviderError('');
       if (!status.configured)
-        throw new Error('图像服务尚未配置。请在服务器本地配置 OpenAI API 密钥后再制作。');
+        throw new Error('图像服务尚未配置。请在服务器配置千问 API 密钥和业务空间接口后再制作。');
       const fingerprint = JSON.stringify([
         checked.value,
         series,
@@ -927,12 +927,12 @@ export default function Studio() {
                         checked={consent}
                         onChange={(e) => void setSubjectConsent(e.target.checked)}
                       />
-                      我同意在本机识别人物，并将所选照片及卡片信息发送至 OpenAI 生成卡面。
+                      我同意在本机识别人物，并将所选照片及卡片信息经本服务发送至阿里云百炼（千问）生成卡面。
                     </label>
                   </div>
                   <p className="privacy-note">
                     人物识别在本机完成；点击制作后，所选照片会通过服务器发送至
-                    OpenAI。请及时保存成品，刷新页面会清除当前浏览器中的制作内容。
+                    阿里云百炼（千问）。请及时保存成品，刷新页面会清除当前浏览器中的制作内容。
                   </p>
                   <button
                     className="primary full"
@@ -951,7 +951,7 @@ export default function Studio() {
                       (provider === null
                         ? '正在检查图像服务…'
                         : provider.configured
-                          ? 'OpenAI 图像服务已配置。生成可能需要几分钟。'
+                          ? '千问图像服务已配置。生成可能需要几分钟。'
                           : '图像服务尚未配置，暂时无法生成。')}
                   </p>
                 </div>
@@ -981,7 +981,7 @@ export default function Studio() {
                 <p>
                   {generated.current
                     ? '画面已完成，正在排版并制作折射材质。'
-                    : 'OpenAI 正在根据你的照片绘制人物和场景，可能需要几分钟。'}
+                    : '千问正在根据你的照片绘制人物和场景，可能需要几分钟。'}
                 </p>
                 <span className="elapsed">
                   {elapsed} 秒 · {savedSeries.current.toUpperCase()}
@@ -1115,7 +1115,7 @@ export default function Studio() {
         <section className="debug-panel">
           <h3>开发期预览</h3>
           <p>
-            OpenAI 生成卡面，固定模板排版并叠加动态折射。3
+            千问生成卡面，固定模板排版并叠加动态折射。3
             次免费额度与事件仅存进程内存，服务重启后可能重置。保存指标是「图片已呈现」的上界，实际保存不可确认；传播以服务端观察到的去重回流为主。
           </p>
           <pre>{JSON.stringify(metrics, null, 2)}</pre>

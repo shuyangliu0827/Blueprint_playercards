@@ -4,8 +4,11 @@ import type { CardInput } from '../core/input';
 import { parseRequestId } from '../core/request-id';
 import { PreviewError, type JobView, type PreviewService } from './preview-service';
 
-export const IMAGE_MODEL = 'gpt-image-2';
+export const IMAGE_MODEL = 'qwen-image-3.0';
 export const MAX_UPLOAD_BYTES = 30_100_000;
+const IMAGE_SIZE = '1024x1536';
+const MAX_PROVIDER_RESPONSE_BYTES = 1_000_000;
+const MAX_ARTWORK_BYTES = 17_000_000;
 export type Series = 'classic' | 'aura' | 'animation';
 export interface Subject { x: number; y: number; w: number; h: number; confidence: number }
 export interface GenerationRequest { requestId: string; input: CardInput; series: Series; subject: Subject; photos: File[] }
@@ -68,12 +71,47 @@ export function artworkPrompt(request: GenerationRequest): string {
 }
 
 interface Entry { fingerprint: string; promise: Promise<GenerationResult>; createdAt: number; pending: boolean }
+export function qwenEndpoint(value?: string): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.port || url.username || url.password || url.search || url.hash ||
+        !/^[a-z0-9-]+\.(?:cn-beijing|ap-southeast-1|us-east-1|eu-central-1|ap-northeast-1)\.maas\.aliyuncs\.com$/.test(url.hostname) ||
+        url.pathname !== '/compatible-mode/v1/images/generations') return undefined;
+    return url.href;
+  } catch { return undefined; }
+}
+
+function artworkUrl(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.port || url.username || url.password || url.hash ||
+        !/^dashscope-[a-z0-9-]+\.oss-(?:accelerate|[a-z0-9-]+)\.aliyuncs\.com$/.test(url.hostname)) return undefined;
+    return url.href;
+  } catch { return undefined; }
+}
+
+async function boundedBytes(response: Response, limit: number): Promise<Buffer> {
+  const reader = response.body?.getReader();
+  if (!reader) return fail('PROVIDER_INVALID_OUTPUT', 'Qwen did not return image data', 502);
+  const chunks: Uint8Array[] = []; let length = 0;
+  for (;;) {
+    const part = await reader.read();
+    if (part.done) break;
+    length += part.value.length;
+    if (length > limit) { await reader.cancel(); return fail('PROVIDER_INVALID_OUTPUT', 'provider response exceeds output limit', 502); }
+    chunks.push(part.value);
+  }
+  return Buffer.concat(chunks);
+}
+
 export class ImageGenerationService {
   private readonly entries = new Map<string, Entry>();
-  constructor(private readonly preview: PreviewService, private readonly options: { apiKey?: string; fetch?: typeof fetch; timeoutMs?: number; now?: () => number } = {}) {}
-  get status() { return { configured: Boolean(this.options.apiKey?.trim()), model: IMAGE_MODEL }; }
+  constructor(private readonly preview: PreviewService, private readonly options: { apiKey?: string; endpoint?: string; fetch?: typeof fetch; timeoutMs?: number; now?: () => number } = {}) {}
+  get status() { return { configured: Boolean(this.options.apiKey?.trim() && qwenEndpoint(this.options.endpoint)), model: IMAGE_MODEL }; }
   async generate(actor: string, request: GenerationRequest): Promise<GenerationResult> {
-    if (!this.status.configured) return fail('PROVIDER_NOT_CONFIGURED', '尚未配置 OpenAI API Key，请联系管理员。', 503);
+    if (!this.status.configured) return fail('PROVIDER_NOT_CONFIGURED', '尚未配置千问图像 API，请联系管理员。', 503);
     // Validate independently of the HTTP parser for callers and tests.
     const form = new FormData();
     form.set('requestId', request.requestId); form.set('input', JSON.stringify(request.input)); form.set('subject', JSON.stringify(request.subject)); form.set('series', request.series);
@@ -113,26 +151,28 @@ export class ImageGenerationService {
     return entry.promise;
   }
   private async callProvider(request: GenerationRequest): Promise<string> {
-    const body = new FormData();
-    body.set('model', IMAGE_MODEL); body.set('prompt', artworkPrompt(request)); body.set('n', '1');
-    body.set('size', '1024x1536'); body.set('quality', 'high'); body.set('output_format', 'png');
-    request.photos.forEach((photo, index) => body.append('image[]', photo, `reference-${index + 1}.jpg`));
+    const images = await Promise.all(request.photos.map(async photo =>
+      `data:image/jpeg;base64,${Buffer.from(await photo.arrayBuffer()).toString('base64')}`));
+    const body = JSON.stringify({ model: IMAGE_MODEL, prompt: artworkPrompt(request), image: images,
+      size: IMAGE_SIZE, n: 1, prompt_extend: false, watermark: false });
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 240_000);
     try {
-      const response = await (this.options.fetch ?? fetch)('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: `Bearer ${this.options.apiKey}` }, body, signal: controller.signal });
-      if (!response.ok) return fail(response.status === 429 ? 'PROVIDER_BUSY' : 'PROVIDER_FAILED', 'OpenAI 暂未完成图片生成，请稍后手动重试。', 502);
-      // Bound output before JSON parsing, including responses without Content-Length.
-      const reader = response.body?.getReader();
-      if (!reader) return fail('PROVIDER_INVALID_OUTPUT', 'OpenAI did not return an image', 502);
-      const chunks: Uint8Array[] = []; let length = 0;
-      for (;;) { const part = await reader.read(); if (part.done) break; length += part.value.length; if (length > 24_000_000) { await reader.cancel(); return fail('PROVIDER_INVALID_OUTPUT', 'provider image exceeds output limit', 502); } chunks.push(part.value); }
-      const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { data?: { b64_json?: string }[] };
-      const encoded = payload.data?.[0]?.b64_json;
-      if (typeof encoded !== 'string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return fail('PROVIDER_INVALID_OUTPUT', 'OpenAI did not return valid image data', 502);
-      const png = Buffer.from(encoded, 'base64');
-      if (png.length < 33 || !png.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) || png.toString('ascii', 12, 16) !== 'IHDR' || png.readUInt32BE(16) !== 1024 || png.readUInt32BE(20) !== 1536) return fail('PROVIDER_INVALID_OUTPUT', 'OpenAI returned an unexpected image', 502);
-      return `data:image/png;base64,${encoded}`;
+      const response = await (this.options.fetch ?? fetch)(qwenEndpoint(this.options.endpoint)!, { method: 'POST',
+        headers: { Authorization: `Bearer ${this.options.apiKey}`, 'Content-Type': 'application/json' },
+        body, signal: controller.signal, cache: 'no-store' });
+      if (!response.ok) return fail(response.status === 429 ? 'PROVIDER_BUSY' : 'PROVIDER_FAILED', '千问暂未完成图片生成，请稍后手动重试。', 502);
+      let payload: { data?: { url?: unknown }[] };
+      try { payload = JSON.parse((await boundedBytes(response, MAX_PROVIDER_RESPONSE_BYTES)).toString('utf8')); }
+      catch { return fail('PROVIDER_INVALID_OUTPUT', 'Qwen returned invalid response data', 502); }
+      const url = artworkUrl(payload?.data?.[0]?.url);
+      if (!url) return fail('PROVIDER_INVALID_OUTPUT', 'Qwen returned an invalid image URL', 502);
+      const imageResponse = await (this.options.fetch ?? fetch)(url, { method: 'GET', signal: controller.signal,
+        redirect: 'error', cache: 'no-store' });
+      if (!imageResponse.ok) return fail('PROVIDER_INVALID_OUTPUT', 'Qwen image could not be downloaded', 502);
+      const png = await boundedBytes(imageResponse, MAX_ARTWORK_BYTES);
+      if (png.length < 33 || !png.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) || png.toString('ascii', 12, 16) !== 'IHDR' || png.readUInt32BE(16) !== 1024 || png.readUInt32BE(20) !== 1536) return fail('PROVIDER_INVALID_OUTPUT', 'Qwen returned an unexpected image', 502);
+      return `data:image/png;base64,${png.toString('base64')}`;
     } catch (error) {
       if (controller.signal.aborted) return fail('PROVIDER_TIMEOUT', '生成超时；不会自动重复付费请求。请手动重试。', 504);
       throw error;
